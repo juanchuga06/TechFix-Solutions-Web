@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechFix Solutions – Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; background: #f5f5f5; }
+
+    /* ===== LAYOUT ===== */
+    .app-layout {
+      display: flex;
+      flex: 1;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: 200px;
+      min-height: 100vh;
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-sede {
+      background: #111;
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 16px 18px;
+      letter-spacing: 0.3px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 10px 0;
+      list-style: none;
+    }
+
+    .sidebar-nav li a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      color: #333;
+      text-decoration: none;
+      font-size: 14px;
+      border-radius: 4px;
+      margin: 2px 8px;
+      transition: background 0.15s;
+    }
+
+    .sidebar-nav li a:hover {
+      background: #f0f0f0;
+    }
+
+    .sidebar-nav li a.active {
+      background: #111;
+      color: #fff;
+    }
+
+    .sidebar-nav li a .icon {
+      font-size: 15px;
+    }
+
+    .sidebar-user {
+      border-top: 1px solid #e0e0e0;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-user .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #ddd;
+      border: 1px solid #bbb;
+      flex-shrink: 0;
+    }
+
+    .sidebar-user .user-info .name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .sidebar-user .user-info .role {
+      font-size: 12px;
+      color: #888;
+    }
+
+    /* ===== MAIN ===== */
+    .main-content {
+      flex: 1;
+      padding: 28px 32px;
+      overflow-y: auto;
+    }
+
+    /* ===== SECTION ===== */
+    .section-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 14px;
+    }
+
+    .section-block {
+      margin-bottom: 40px;
+    }
+
+    /* ===== SEARCH + ACTIONS BAR ===== */
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .table-toolbar .search-input {
+      display: flex;
+      align-items: center;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      padding: 6px 12px;
+      gap: 8px;
+      width: 320px;
+    }
+
+    .table-toolbar .search-input input {
+      border: none;
+      outline: none;
+      font-size: 13px;
+      color: #555;
+      width: 100%;
+      background: transparent;
+    }
+
+    .table-toolbar .search-input .search-icon {
+      color: #999;
+      font-size: 14px;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ===== SCROLLABLE TABLE ===== */
+    .table-scroll {
+      max-height: 260px;
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+    }
+
+    .table-scroll table {
+      min-width: 700px;
+    }
+
+    .table-scroll thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tbody tr.selected {
+      background: #e8f0fe !important;
+    }
+
+    tbody tr { cursor: pointer; }
+
+    /* ===== LOGOUT PANEL ===== */
+    .sidebar-user {
+      border-top: 1px solid #e0e0e0;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .sidebar-user:hover { background: #f5f5f5; }
+
+    .logout-panel {
+      display: none;
+      background: #f9f9f9;
+      border-top: 1px solid #e0e0e0;
+      padding: 12px 18px;
+      font-size: 13px;
+    }
+
+    .logout-panel.open { display: block; }
+
+    .logout-panel-title {
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 4px;
+    }
+
+    .logout-panel-desc {
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-sede" id="sedeLabel">Sede: NORTE</div>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="dashboard.html" class="active">
+          <span class="icon">🏠</span> Home
+        </a>
+      </li>
+      <li>
+        <a href="ordenes.html">
+          <span class="icon">📋</span> Ordenes de servicio
+        </a>
+      </li>
+      <li>
+        <a href="clientes.html">
+          <span class="icon">👥</span> Clientes
+        </a>
+      </li>
+      <li>
+        <a href="tecnicos.html">
+          <span class="icon">🔧</span> Técnicos y Sedes
+        </a>
+      </li>
+      <li>
+        <a href="repuestos.html">
+          <span class="icon">⚙️</span> Repuestos
+        </a>
+      </li>
+    </ul>
+    <div class="sidebar-user" id="sidebarUserBtn">
+      <div class="avatar"></div>
+      <div class="user-info">
+        <div class="name" id="sidebarUserName">Usuario</div>
+        <div class="role">Recepcionista</div>
+      </div>
+    </div>
+
+    <!-- Panel cierre de sesión -->
+    <div class="logout-panel" id="logoutPanel">
+      <div class="logout-panel-title">Cerrar sesión</div>
+      <div class="logout-panel-desc">Será devuelto a la pestaña de inicio de sesión.</div>
+      <button class="btn btn-primary btn-sm" id="btnLogout">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- TODAS LAS ÓRDENES -->
+    <div class="section-block">
+      <div class="table-toolbar">
+        <h2 class="section-title" style="margin-bottom:0;">Todas las órdenes</h2>
+        <div class="search-input">
+          <span class="search-icon">🔍</span>
+          <input type="date" id="filtroFecha" placeholder="Buscar por fecha... (dd/mm/aa)" />
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table id="tablaTodasOrdenes">
+          <thead>
+            <tr>
+              <th>Número de folio</th>
+              <th>Fecha de ingreso</th>
+              <th>Descripción del fallo</th>
+              <th>Estado de la orden</th>
+              <th>Técnico</th>
+              <th>Cliente</th>
+              <th class="col-sur">Nivel de encriptación</th>
+              <th class="col-sur">Protocolo de seguridad</th>
+              <th class="col-sur">Horas de laboratorio</th>
+            </tr>
+          </thead>
+          <tbody id="bodyTodasOrdenes"></tbody>
+        </table>
+      </div>
+
+      <div class="table-actions" style="justify-content:flex-end; margin-top:10px;">
+        <button class="btn btn-danger btn-sm" id="btnEliminar" disabled>Eliminar orden</button>
+        <button class="btn btn-secondary btn-sm" id="btnActualizar" disabled>Actualizar orden</button>
+        <button class="btn btn-primary btn-sm" id="btnNueva">Nueva orden</button>
+      </div>
+    </div>
+
+    <!-- ÓRDENES PENDIENTES -->
+    <div class="section-block">
+      <h2 class="section-title">Órdenes pendientes</h2>
+      <div class="table-scroll">
+        <table id="tablaPendientes">
+          <thead>
+            <tr>
+              <th>Número de folio</th>
+              <th>Fecha de ingreso</th>
+              <th>Descripción del fallo</th>
+              <th>Técnico</th>
+              <th>Cliente</th>
+              <th class="col-sur">Nivel de encriptación</th>
+              <th class="col-sur">Protocolo de seguridad</th>
+              <th class="col-sur">Horas de laboratorio</th>
+            </tr>
+          </thead>
+          <tbody id="bodyPendientes"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ÓRDENES EN PROCESO -->
+    <div class="section-block">
+      <h2 class="section-title">Órdenes en proceso</h2>
+      <div class="table-scroll">
+        <table id="tablaEnProceso">
+          <thead>
+            <tr>
+              <th>Número de folio</th>
+              <th>Fecha de ingreso</th>
+              <th>Descripción del fallo</th>
+              <th>Técnico</th>
+              <th>Cliente</th>
+              <th class="col-sur">Nivel de encriptación</th>
+              <th class="col-sur">Protocolo de seguridad</th>
+              <th class="col-sur">Horas de laboratorio</th>
+            </tr>
+          </thead>
+          <tbody id="bodyEnProceso"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ÓRDENES FINALIZADAS -->
+    <div class="section-block">
+      <h2 class="section-title">Órdenes finalizadas</h2>
+      <div class="table-scroll">
+        <table id="tablaFinalizadas">
+          <thead>
+            <tr>
+              <th>Número de folio</th>
+              <th>Fecha de ingreso</th>
+              <th>Descripción del fallo</th>
+              <th>Técnico</th>
+              <th>Cliente</th>
+              <th class="col-sur">Nivel de encriptación</th>
+              <th class="col-sur">Protocolo de seguridad</th>
+              <th class="col-sur">Horas de laboratorio</th>
+            </tr>
+          </thead>
+          <tbody id="bodyFinalizadas"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL ELIMINAR ORDEN -->
+<div class="modal-overlay" id="modalEliminar">
+  <div class="modal" style="max-width:440px; text-align:center;">
+    <h3 class="modal-title" style="text-align:center;">Eliminar órden</h3>
+    <p style="font-size:14px; margin-bottom:14px; color:#333;">
+      ¿Desea eliminar la órden de número de folio: <strong id="modalFolio"></strong>?
+    </p>
+    <div style="font-size:13px; color:#555; line-height:1.8; margin-bottom:14px; text-align:left; display:inline-block;">
+      <div>Fecha de ingreso: <span id="modalFecha"></span></div>
+      <div>Descripción del fallo: <span id="modalDescripcion"></span></div>
+      <div>Estado de la orden: <span id="modalEstado"></span></div>
+      <div>Técnico: <span id="modalTecnico"></span></div>
+      <div>Cliente: <span id="modalCliente"></span></div>
+      <div class="col-sur-modal">Nivel de encriptación: <span id="modalEncriptacion"></span></div>
+      <div class="col-sur-modal">Protocolo de seguridad: <span id="modalProtocolo"></span></div>
+      <div class="col-sur-modal">Horas de laboratorio: <span id="modalHoras"></span></div>
+    </div>
+    <p style="font-size:12px; color:#888; margin-bottom:24px;">Esta acción es irreversible.</p>
+    <div style="display:flex; justify-content:center; gap:16px;">
+      <button class="btn btn-secondary" id="btnCancelarEliminar">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarEliminar">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

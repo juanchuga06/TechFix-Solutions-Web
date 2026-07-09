@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechFix Solutions – Iniciar Sesión</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <div class="login-container">
+
+    <!-- Logo placeholder (X en caja) -->
+    <div class="login-logo"></div>
+
+    <h1 class="login-title">TechFix Solutions</h1>
+    <p class="login-subtitle">Sistema de gestión de ordenes de TechFix Solutions</p>
+
+    <form class="login-form" id="loginForm" novalidate>
+
+      <div id="loginAlert" class="alert alert-error" style="display:none;"></div>
+
+      <div class="form-group">
+        <label for="usuario">Usuario:</label>
+        <input
+          type="text"
+          id="usuario"
+          name="usuario"
+          placeholder="Escriba su usuario"
+          autocomplete="username"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="contrasena">Contraseña:</label>
+        <input
+          type="password"
+          id="contrasena"
+          name="contrasena"
+          placeholder="Escriba su contraseña"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="sede">Sede:</label>
+        <select id="sede" name="sede" required>
+          <option value="" disabled selected>Seleccione una sede</option>
+          <option value="norte">Sede Norte</option>
+          <option value="sur">Sede Sur</option>
+        </select>
+      </div>
+
+      <button type="submit" class="login-btn">Ingresar</button>
+
+    </form>
+  </div>
+
+  <script src="js/auth.js"></script>
+</body>
+</html>

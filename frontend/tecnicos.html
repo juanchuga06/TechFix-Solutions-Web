@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechFix Solutions – Técnicos y Sedes</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    body { display: flex; min-height: 100vh; background: #f5f5f5; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: 200px; min-height: 100vh; background: #fff;
+      border-right: 1px solid #e0e0e0; display: flex;
+      flex-direction: column; flex-shrink: 0;
+    }
+    .sidebar-sede { background: #111; color: #fff; font-weight: 700; font-size: 15px; padding: 16px 18px; }
+    .sidebar-nav { flex: 1; padding: 10px 0; list-style: none; }
+    .sidebar-nav li a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 18px; color: #333; text-decoration: none;
+      font-size: 14px; border-radius: 4px; margin: 2px 8px; transition: background 0.15s;
+    }
+    .sidebar-nav li a:hover { background: #f0f0f0; }
+    .sidebar-nav li a.active { background: #111; color: #fff; }
+    .sidebar-user {
+      border-top: 1px solid #e0e0e0; padding: 14px 18px;
+      display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.15s;
+    }
+    .sidebar-user:hover { background: #f5f5f5; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #ddd; border: 1px solid #bbb; flex-shrink: 0; }
+    .user-info .name { font-size: 13px; font-weight: 600; color: #111; }
+    .user-info .role { font-size: 12px; color: #888; }
+    .logout-panel { display: none; background: #f9f9f9; border-top: 1px solid #e0e0e0; padding: 12px 18px; font-size: 13px; }
+    .logout-panel.open { display: block; }
+    .logout-panel-title { font-weight: 600; color: #111; margin-bottom: 4px; }
+    .logout-panel-desc { color: #666; font-size: 12px; margin-bottom: 10px; line-height: 1.4; }
+
+    /* ===== MAIN ===== */
+    .main-content { flex: 1; padding: 28px 32px; }
+    .page-title { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 20px; }
+    .section-title { font-size: 20px; font-weight: 700; color: #111; margin: 32px 0 16px; }
+
+    /* ===== TABLE ===== */
+    .tbl-wrap { border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; max-width: 860px; }
+    .tbl-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .tbl-wrap thead th {
+      background: #111; color: #fff; padding: 10px 16px; text-align: left; font-weight: 500;
+    }
+    .tbl-wrap tbody tr { border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.15s; }
+    .tbl-wrap tbody tr:last-child { border-bottom: none; }
+    .tbl-wrap tbody tr:hover { background: #f5f5f5; }
+    .tbl-wrap tbody tr.selected { background: #e8e8e8; }
+    .tbl-wrap tbody td { padding: 10px 16px; color: #444; font-size: 13px; }
+
+    /* ===== TOOLBAR ===== */
+    .tbl-toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; max-width: 860px; }
+
+    /* ===== MODAL FIELDS ===== */
+    .modal-field { margin-bottom: 14px; }
+    .modal-field label { display: block; font-size: 13px; font-weight: 600; color: #222; margin-bottom: 4px; }
+    .modal-field input {
+      width: 100%; padding: 8px 12px; border: 1px solid #ccc;
+      border-radius: 4px; font-size: 14px; outline: none;
+    }
+    .modal-field input:focus { border-color: #333; }
+    .modal-field input[readonly] { background: #f5f5f5; color: #666; cursor: default; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-sede" id="sedeLabel">Sede: NORTE</div>
+  <ul class="sidebar-nav">
+    <li><a href="dashboard.html"><span>🏠</span> Home</a></li>
+    <li><a href="ordenes.html"><span>📋</span> Ordenes de servicio</a></li>
+    <li><a href="clientes.html"><span>👥</span> Clientes</a></li>
+    <li><a href="tecnicos.html" class="active"><span>🔧</span> Técnicos y Sedes</a></li>
+    <li><a href="repuestos.html"><span>⚙️</span> Repuestos</a></li>
+  </ul>
+  <div class="sidebar-user" id="sidebarUserBtn">
+    <div class="avatar"></div>
+    <div class="user-info">
+      <div class="name" id="sidebarUserName">Usuario</div>
+      <div class="role">Recepcionista</div>
+    </div>
+  </div>
+  <div class="logout-panel" id="logoutPanel">
+    <div class="logout-panel-title">Cerrar sesión</div>
+    <div class="logout-panel-desc">Será devuelto a la pestaña de inicio de sesión.</div>
+    <button class="btn btn-primary btn-sm" id="btnLogout">Cerrar sesión</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+
+  <!-- PERSONAL TÉCNICO -->
+  <h1 class="page-title">Personal Técnico</h1>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Código de Empleado</th>
+          <th>Cédula</th>
+          <th>Nombre</th>
+          <th>Apellido</th>
+          <th>Especialidad</th>
+        </tr>
+      </thead>
+      <tbody id="bodyTecnicos"></tbody>
+    </table>
+  </div>
+
+  <div class="tbl-toolbar">
+    <button class="btn btn-primary" id="btnActualizarTecnico" disabled>Actualizar Técnico</button>
+    <button class="btn btn-primary" id="btnEliminarTecnico" disabled>Eliminar Técnico</button>
+    <button class="btn btn-primary" id="btnAgregarTecnico">Agregar Técnico</button>
+  </div>
+
+  <!-- SEDES -->
+  <h2 class="section-title">Sedes</h2>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th>Teléfono</th>
+        </tr>
+      </thead>
+      <tbody id="bodySedes"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- MODAL AGREGAR TÉCNICO -->
+<div class="modal-overlay" id="modalAgregarTecnico">
+  <div class="modal" style="max-width:460px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 class="modal-title" style="margin-bottom:0;">Ingreso de nuevo técnico</h3>
+      <button id="btnCerrarAgregar" style="background:none;border:1px solid #ccc;width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+    </div>
+    <div class="modal-field">
+      <label>Cédula</label>
+      <input type="text" id="agCedula" placeholder="Type here..." maxlength="13" />
+    </div>
+    <div class="modal-field">
+      <label>Nombre</label>
+      <input type="text" id="agNombre" placeholder="Type here..." />
+    </div>
+    <div class="modal-field">
+      <label>Apellido</label>
+      <input type="text" id="agApellido" placeholder="Type here..." />
+    </div>
+    <div class="modal-field">
+      <label>Especialidad</label>
+      <input type="text" id="agEspecialidad" placeholder="Type here..." />
+    </div>
+    <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+      <button class="btn btn-primary" id="btnConfirmarAgregar">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ACTUALIZAR TÉCNICO -->
+<div class="modal-overlay" id="modalActualizarTecnico">
+  <div class="modal" style="max-width:460px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 class="modal-title" style="margin-bottom:0;">Actualizar técnico</h3>
+      <button id="btnCerrarActualizar" style="background:none;border:1px solid #ccc;width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+    </div>
+
+    <!-- Solo lectura -->
+    <div style="display:flex; gap:12px; margin-bottom:12px; align-items:center;">
+      <label style="min-width:130px; font-size:13px; font-weight:600; color:#222;">Código:</label>
+      <span id="updCodigoDisp" style="font-size:14px; color:#666;"></span>
+    </div>
+    <div style="display:flex; gap:12px; margin-bottom:18px; align-items:center;">
+      <label style="min-width:130px; font-size:13px; font-weight:600; color:#222;">Cédula:</label>
+      <span id="updCedulaDisp" style="font-size:14px; color:#666;"></span>
+    </div>
+
+    <!-- Nombre editable con lápiz -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <label style="min-width:130px; font-size:13px; font-weight:600; color:#222;">Nombre:</label>
+      <span id="spanNombre" style="font-size:14px; color:#333; flex:1;"></span>
+      <input type="text" id="inputNombre" style="display:none; flex:1; padding:6px 10px; border:1px solid #333; border-radius:4px; font-size:14px; outline:none;" />
+      <button onclick="toggleEdit('Nombre')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;" title="Editar">✏️</button>
+    </div>
+
+    <!-- Apellido editable con lápiz -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <label style="min-width:130px; font-size:13px; font-weight:600; color:#222;">Apellido:</label>
+      <span id="spanApellido" style="font-size:14px; color:#333; flex:1;"></span>
+      <input type="text" id="inputApellido" style="display:none; flex:1; padding:6px 10px; border:1px solid #333; border-radius:4px; font-size:14px; outline:none;" />
+      <button onclick="toggleEdit('Apellido')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;" title="Editar">✏️</button>
+    </div>
+
+    <!-- Especialidad editable con lápiz -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+      <label style="min-width:130px; font-size:13px; font-weight:600; color:#222;">Especialidad:</label>
+      <span id="spanEspecialidad" style="font-size:14px; color:#333; flex:1;"></span>
+      <input type="text" id="inputEspecialidad" style="display:none; flex:1; padding:6px 10px; border:1px solid #333; border-radius:4px; font-size:14px; outline:none;" />
+      <button onclick="toggleEdit('Especialidad')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;" title="Editar">✏️</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="btnCancelarActualizar">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarActualizar">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ACTUALIZACIÓN EXITOSA -->
+<div class="modal-overlay" id="modalActualizadoExitoTec">
+  <div class="modal" style="max-width:380px; text-align:center;">
+    <h3 class="modal-title" style="text-align:center; margin-bottom:16px;">Técnico Actualizado con Éxito</h3>
+    <p style="font-size:14px; color:#333; margin-bottom:24px;">Los datos del técnico fueron actualizados correctamente.</p>
+    <button class="btn btn-primary" id="btnAceptarActualizadoTec">Aceptar</button>
+  </div>
+</div>
+
+<!-- MODAL ELIMINAR TÉCNICO -->
+<div class="modal-overlay" id="modalEliminarTecnico">
+  <div class="modal" style="max-width:420px; text-align:center;">
+    <h3 class="modal-title" style="text-align:center;">Eliminar técnico</h3>
+    <p style="font-size:14px; color:#333; margin-bottom:12px;">
+      ¿Desea eliminar al técnico con código de empleado: <strong id="modalTecCodigo"></strong>?
+    </p>
+    <p style="font-size:13px; color:#444; line-height:1.8; margin-bottom:8px;">
+      Cédula: <span id="modalTecCedula"></span><br>
+      Nombre: <span id="modalTecNombre"></span><br>
+      Apellido: <span id="modalTecApellido"></span><br>
+      Especialidad: <span id="modalTecEspecialidad"></span>
+    </p>
+    <p style="font-size:12px; color:#888; margin-bottom:24px;">Esta acción es irreversible.</p>
+    <div style="display:flex; justify-content:center; gap:16px;">
+      <button class="btn btn-secondary" id="btnCancelarElimTecnico">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarElimTecnico">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/tecnicos.js"></script>
+</body>
+</html>

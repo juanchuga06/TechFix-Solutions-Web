@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechFix Solutions – Clientes</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    body { display: flex; min-height: 100vh; background: #f5f5f5; }
+
+    .sidebar {
+      width: 200px; min-height: 100vh; background: #fff;
+      border-right: 1px solid #e0e0e0; display: flex;
+      flex-direction: column; flex-shrink: 0;
+    }
+    .sidebar-sede { background: #111; color: #fff; font-weight: 700; font-size: 15px; padding: 16px 18px; }
+    .sidebar-nav { flex: 1; padding: 10px 0; list-style: none; }
+    .sidebar-nav li a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 18px; color: #333; text-decoration: none;
+      font-size: 14px; border-radius: 4px; margin: 2px 8px; transition: background 0.15s;
+    }
+    .sidebar-nav li a:hover { background: #f0f0f0; }
+    .sidebar-nav li a.active { background: #111; color: #fff; }
+    .sidebar-user {
+      border-top: 1px solid #e0e0e0; padding: 14px 18px;
+      display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.15s;
+    }
+    .sidebar-user:hover { background: #f5f5f5; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #ddd; border: 1px solid #bbb; flex-shrink: 0; }
+    .user-info .name { font-size: 13px; font-weight: 600; color: #111; }
+    .user-info .role { font-size: 12px; color: #888; }
+    .logout-panel { display: none; background: #f9f9f9; border-top: 1px solid #e0e0e0; padding: 12px 18px; font-size: 13px; }
+    .logout-panel.open { display: block; }
+    .logout-panel-title { font-weight: 600; color: #111; margin-bottom: 4px; }
+    .logout-panel-desc { color: #666; font-size: 12px; margin-bottom: 10px; line-height: 1.4; }
+
+    /* ===== MAIN ===== */
+    .main-content { flex: 1; padding: 28px 32px; max-width: 960px; }
+    .page-title { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 20px; }
+
+    .section-tag {
+      display: inline-block; border: 1px solid #999; border-radius: 20px;
+      padding: 3px 14px; font-size: 12px; font-weight: 600; color: #333;
+      margin-bottom: 18px; letter-spacing: 0.3px;
+    }
+
+    .form-section { margin-bottom: 32px; }
+
+    /* ===== FORM REGISTRO ===== */
+    .client-form { max-width: 700px; }
+
+    .client-form .field-row {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 12px;
+    }
+    .client-form .field-row label {
+      min-width: 170px; font-size: 14px; font-weight: 500; color: #222; text-align: right;
+    }
+    .client-form .field-row input {
+      flex: 1; padding: 8px 12px; border: 1px solid #ccc;
+      border-radius: 4px; font-size: 14px; outline: none; background: #fff;
+    }
+    .client-form .field-row input:focus { border-color: #333; }
+
+    .form-actions {
+      display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;
+    }
+
+    /* ===== DIRECTORIO ===== */
+    .dir-toolbar {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+    }
+    .dir-toolbar label { font-size: 14px; font-weight: 500; color: #222; }
+    .dir-toolbar .search-wrap {
+      display: flex; align-items: center; border: 1px solid #ccc;
+      border-radius: 4px; background: #fff; padding: 6px 12px; gap: 8px; flex: 1; max-width: 480px;
+    }
+    .dir-toolbar .search-wrap input {
+      border: none; outline: none; font-size: 13px; color: #555; width: 100%; background: transparent;
+    }
+
+    /* ===== TABLE ===== */
+    .dir-table-wrap {
+      border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;
+    }
+    .dir-table-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .dir-table-wrap thead th {
+      background: #111; color: #fff; padding: 10px 14px; text-align: left; font-weight: 500;
+    }
+    .dir-table-wrap tbody tr { border-bottom: 1px solid #eee; }
+    .dir-table-wrap tbody tr:last-child { border-bottom: none; }
+    .dir-table-wrap tbody tr:hover { background: #f9f9f9; }
+    .dir-table-wrap tbody td { padding: 10px 14px; color: #444; font-size: 13px; }
+
+    /* ===== PAGINACIÓN ===== */
+    .pagination {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; margin-top: 20px;
+    }
+    .pagination button {
+      padding: 6px 14px; border: none; border-radius: 4px;
+      font-size: 13px; cursor: pointer; background: #111; color: #fff; transition: background 0.2s;
+    }
+    .pagination button:hover { background: #333; }
+    .pagination button:disabled { background: #ccc; cursor: default; }
+    .pagination .page-btn {
+      width: 32px; height: 32px; padding: 0; border-radius: 4px;
+      background: #fff; color: #333; border: 1px solid #ccc; font-size: 13px;
+    }
+    .pagination .page-btn.active { background: #111; color: #fff; border-color: #111; }
+    .pagination .page-btn:hover:not(.active) { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-sede" id="sedeLabel">Sede: NORTE</div>
+  <ul class="sidebar-nav">
+    <li><a href="dashboard.html"><span>🏠</span> Home</a></li>
+    <li><a href="ordenes.html"><span>📋</span> Ordenes de servicio</a></li>
+    <li><a href="clientes.html" class="active"><span>👥</span> Clientes</a></li>
+    <li><a href="tecnicos.html"><span>🔧</span> Técnicos y Sedes</a></li>
+    <li><a href="repuestos.html"><span>⚙️</span> Repuestos</a></li>
+  </ul>
+  <div class="sidebar-user" id="sidebarUserBtn">
+    <div class="avatar"></div>
+    <div class="user-info">
+      <div class="name" id="sidebarUserName">Usuario</div>
+      <div class="role">Recepcionista</div>
+    </div>
+  </div>
+  <div class="logout-panel" id="logoutPanel">
+    <div class="logout-panel-title">Cerrar sesión</div>
+    <div class="logout-panel-desc">Será devuelto a la pestaña de inicio de sesión.</div>
+    <button class="btn btn-primary btn-sm" id="btnLogout">Cerrar sesión</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+  <h1 class="page-title">Gestión de clientes</h1>
+
+  <!-- 1. INGRESAR NUEVO CLIENTE -->
+  <div class="form-section">
+    <div class="section-tag">INGRESAR NUEVO CLIENTE</div>
+    <div class="client-form" id="clienteForm">
+      <div class="field-row">
+        <label>Cédula Cliente:</label>
+        <input type="text" id="fCedula" placeholder="Type here..." maxlength="13" />
+      </div>
+      <div class="field-row">
+        <label>Nombre:</label>
+        <input type="text" id="fNombre" placeholder="Type here..." />
+      </div>
+      <div class="field-row">
+        <label>Apellido:</label>
+        <input type="text" id="fApellido" placeholder="Type here..." />
+      </div>
+      <div class="field-row">
+        <label>Teléfono:</label>
+        <input type="tel" id="fTelefono" placeholder="Type here..." maxlength="15" />
+      </div>
+      <div class="field-row">
+        <label>Correo Electrónico:</label>
+        <input type="email" id="fCorreo" placeholder="Type here..." />
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" id="btnLimpiar">Limpiar</button>
+        <button class="btn btn-primary" id="btnRegistrar">Registrar Cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. DIRECTORIO DE CLIENTES -->
+  <div class="form-section">
+    <div class="section-tag">DIRECTORIO DE CLIENTES</div>
+    <div class="dir-toolbar">
+      <label>Buscar Cliente:</label>
+      <div class="search-wrap">
+        <span style="color:#999; font-size:13px;">🔍</span>
+        <input type="text" id="buscarClienteDir" placeholder="Search..." autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="dir-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Cédula</th>
+            <th>Nombre Completo</th>
+            <th>Teléfono</th>
+            <th>Correo</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="bodyClientes"></tbody>
+      </table>
+    </div>
+
+    <div class="pagination" id="paginacion"></div>
+  </div>
+</main>
+
+<!-- MODAL REGISTRO EXITOSO -->
+<div class="modal-overlay" id="modalRegistro">
+  <div class="modal" style="max-width:380px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 class="modal-title" style="margin-bottom:0;">Cliente Registrado con Éxito</h3>
+      <button id="btnCerrarRegistro" style="background:none;border:1px solid #ccc;width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+    </div>
+    <p style="font-size:14px; color:#333; text-align:center; margin-bottom:24px;">
+      El cliente <strong id="modalRegistroNombre"></strong> fue registrado exitosamente.
+    </p>
+    <div style="text-align:right;">
+      <button class="btn btn-primary" id="btnAceptarRegistro">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ACTUALIZAR CLIENTE -->
+<div class="modal-overlay" id="modalActualizar">
+  <div class="modal" style="max-width:460px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 class="modal-title" style="margin-bottom:0;">Actualizar Cliente</h3>
+      <button id="btnCerrarActualizar" style="background:none;border:1px solid #ccc;width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+    </div>
+
+    <!-- Cédula: solo lectura -->
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <label style="min-width:150px; font-size:14px; font-weight:600; color:#222;">Cédula Cliente:</label>
+      <span id="updCedulaDisp" style="font-size:14px; color:#333;"></span>
+      <input type="hidden" id="updCedula" />
+    </div>
+
+    <!-- Nombre -->
+    <div class="upd-row" id="updRowNombre" style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <label style="min-width:150px; font-size:14px; font-weight:600; color:#222;">Nombre:</label>
+      <span class="upd-disp" id="updNombreDisp" style="font-size:14px; color:#333; flex:1;"></span>
+      <input type="text" id="updNombre" class="upd-input" style="display:none; flex:1; padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px; outline:none;" />
+      <button class="pencil-modal" data-row="updRowNombre" style="background:none;border:none;cursor:pointer;font-size:15px;color:#666;">✏️</button>
+    </div>
+
+    <!-- Apellido -->
+    <div class="upd-row" id="updRowApellido" style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <label style="min-width:150px; font-size:14px; font-weight:600; color:#222;">Apellido:</label>
+      <span class="upd-disp" id="updApellidoDisp" style="font-size:14px; color:#333; flex:1;"></span>
+      <input type="text" id="updApellido" class="upd-input" style="display:none; flex:1; padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px; outline:none;" />
+      <button class="pencil-modal" data-row="updRowApellido" style="background:none;border:none;cursor:pointer;font-size:15px;color:#666;">✏️</button>
+    </div>
+
+    <!-- Teléfono -->
+    <div class="upd-row" id="updRowTelefono" style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <label style="min-width:150px; font-size:14px; font-weight:600; color:#222;">Teléfono:</label>
+      <span class="upd-disp" id="updTelefonoDisp" style="font-size:14px; color:#333; flex:1;"></span>
+      <input type="tel" id="updTelefono" class="upd-input" style="display:none; flex:1; padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px; outline:none;" />
+      <button class="pencil-modal" data-row="updRowTelefono" style="background:none;border:none;cursor:pointer;font-size:15px;color:#666;">✏️</button>
+    </div>
+
+    <!-- Correo -->
+    <div class="upd-row" id="updRowCorreo" style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <label style="min-width:150px; font-size:14px; font-weight:600; color:#222;">Correo Electrónico:</label>
+      <span class="upd-disp" id="updCorreoDisp" style="font-size:14px; color:#333; flex:1;"></span>
+      <input type="email" id="updCorreo" class="upd-input" style="display:none; flex:1; padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px; outline:none;" />
+      <button class="pencil-modal" data-row="updRowCorreo" style="background:none;border:none;cursor:pointer;font-size:15px;color:#666;">✏️</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="btnCancelarActualizar">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarActualizar">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ACTUALIZACIÓN EXITOSA -->
+<div class="modal-overlay" id="modalActualizadoExito">
+  <div class="modal" style="max-width:380px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 class="modal-title" style="margin-bottom:0;">Cliente Actualizado  con Éxito</h3>
+      <button id="btnCerrarActualizadoExito" style="background:none;border:1px solid #ccc;width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+    </div>
+    <p style="font-size:14px; color:#333; text-align:center; margin-bottom:24px;">
+      El cliente se actualizó exitosamente
+    </p>
+    <div style="text-align:right;">
+      <button class="btn btn-primary" id="btnAceptarActualizadoExito">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ELIMINAR CLIENTE -->
+<div class="modal-overlay" id="modalEliminarCliente">
+  <div class="modal" style="max-width:420px; text-align:center;">
+    <h3 class="modal-title" style="text-align:center;">Eliminar cliente</h3>
+    <p style="font-size:14px; color:#333; margin-bottom:10px;">
+      ¿Desea eliminar el cliente con cédula: <strong id="modalElimCedula"></strong>?
+    </p>
+    <p style="font-size:13px; color:#444; margin-bottom:10px;">
+      Nombre: <span id="modalElimNombre"></span>
+    </p>
+    <p style="font-size:12px; color:#888; margin-bottom:24px;">Esta acción es irreversible.</p>
+    <div style="display:flex; justify-content:center; gap:16px;">
+      <button class="btn btn-secondary" id="btnCancelarElimCliente">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarElimCliente">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/clientes.js"></script>
+</body>
+</html>
