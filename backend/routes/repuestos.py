@@ -45,7 +45,10 @@ def crear_repuesto(repuesto: RepuestoCreate, db = Depends(get_db)):
     """Crea un nuevo repuesto ejecutando sp_InsertarRepuesto."""
     try:
         cursor = db.cursor()
-        query = "EXEC sp_InsertarRepuesto @nombre=?, @costo=?"
+        query = """
+            SET XACT_ABORT ON;
+            EXEC sp_InsertarRepuesto @nombre=?, @costo=?
+        """
         cursor.execute(query, (
             repuesto.nombre_pieza,
             repuesto.costo_unitario
@@ -64,7 +67,10 @@ def actualizar_repuesto(codigo: int, repuesto: RepuestoUpdate, db = Depends(get_
     """Actualiza un repuesto existente mediante sp_ActualizarRepuesto."""
     try:
         cursor = db.cursor()
-        query = "EXEC sp_ActualizarRepuesto @codigo=?, @nombre=?, @costo=?"
+        query = """
+            SET XACT_ABORT ON;
+            EXEC sp_ActualizarRepuesto @codigo=?, @nombre=?, @costo=?
+        """
         cursor.execute(query, (
             codigo,
             repuesto.nombre_pieza,
@@ -84,7 +90,11 @@ def eliminar_repuesto(codigo: int, db = Depends(get_db)):
     """Elimina un repuesto usando sp_EliminarRepuesto."""
     try:
         cursor = db.cursor()
-        cursor.execute("EXEC sp_EliminarRepuesto @codigo=?", (codigo,))
+        query = """
+        SET XACT_ABORT ON;
+        EXEC sp_EliminarRepuesto @codigo=?
+        """
+        cursor.execute(query, (codigo,))
         db.commit()
         return {"mensaje": f"Repuesto con código {codigo} eliminado exitosamente"}
     except pyodbc.ProgrammingError as e:

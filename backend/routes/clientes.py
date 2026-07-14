@@ -44,7 +44,10 @@ def crear_cliente(cliente: ClienteBase, db = Depends(get_db)):
     """Crea un nuevo cliente ejecutando sp_InsertarCliente."""
     try:
         cursor = db.cursor()
-        query = "EXEC sp_InsertarCliente @cedula=?, @nombre=?, @telefono=?, @correo=?"
+        query = """
+            SET XACT_ABORT ON;
+            EXEC sp_InsertarCliente @cedula=?, @nombre=?, @telefono=?, @correo=?
+        """
         cursor.execute(query, (
             cliente.cedula_cliente,
             cliente.nombre_completo,
@@ -65,7 +68,10 @@ def actualizar_cliente(cedula: str, cliente: ClienteBase, db = Depends(get_db)):
     """Actualiza un cliente existente mediante sp_ActualizarCliente."""
     try:
         cursor = db.cursor()
-        query = "EXEC sp_ActualizarCliente @cedula=?, @nombre=?, @telefono=?, @correo=?"
+        query = """
+            SET XACT_ABORT ON;
+            EXEC sp_ActualizarCliente @cedula=?, @nombre=?, @telefono=?, @correo=?
+        """
         # Usamos la cédula de la URL para asegurar consistencia
         cursor.execute(query, (
             cedula,
@@ -87,7 +93,11 @@ def eliminar_cliente(cedula: str, db = Depends(get_db)):
     """Elimina un cliente usando sp_EliminarCliente."""
     try:
         cursor = db.cursor()
-        cursor.execute("EXEC sp_EliminarCliente @cedula=?", (cedula,))
+        query = """
+        SET XACT_ABORT ON;
+        EXEC sp_EliminarCliente @cedula=?
+        """
+        cursor.execute(query, (cedula,))
         db.commit()
         return {"mensaje": f"Cliente {cedula} eliminado exitosamente"}
     except pyodbc.ProgrammingError as e:

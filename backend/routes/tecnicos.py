@@ -58,7 +58,10 @@ def crear_tecnico(tecnico: TecnicoCreate, db = Depends(get_db)):
     """
     try:
         cursor = db.cursor()
-        query = "EXEC sp_InsertarTecnico @cedula=?, @nombre=?, @apellido=?, @especialidad=?, @sede=?"
+        query = """
+        SET XACT_ABORT ON;
+        EXEC sp_InsertarTecnico @cedula=?, @nombre=?, @apellido=?, @especialidad=?, @sede=?
+        """
         cursor.execute(query, (
             tecnico.cedula_tecnico,
             tecnico.nombre_tecnico,
@@ -84,7 +87,10 @@ def actualizar_tecnico(codigo: int, tecnico: TecnicoUpdate, db = Depends(get_db)
     """
     try:
         cursor = db.cursor()
-        query = "EXEC sp_ActualizarTecnico @codigo=?, @cedula=?, @nombre=?, @apellido=?, @especialidad=?"
+        query = """
+        SET XACT_ABORT ON;
+        EXEC sp_ActualizarTecnico @codigo=?, @cedula=?, @nombre=?, @apellido=?, @especialidad=?
+        """
         cursor.execute(query, (
             codigo,
             tecnico.cedula_tecnico,
@@ -109,7 +115,10 @@ def eliminar_tecnico(codigo: int, db = Depends(get_db)):
     """
     try:
         cursor = db.cursor()
-        query = "EXEC sp_EliminarTecnico @codigo=?"
+        query = """
+            SET XACT_ABORT ON;
+            EXEC sp_EliminarTecnico @codigo=?
+        """
         cursor.execute(query, (codigo,))
         db.commit()
         return {"mensaje": f"Técnico con código {codigo} eliminado exitosamente"}
