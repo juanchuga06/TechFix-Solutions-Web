@@ -1,12 +1,18 @@
+import os
 import pyodbc
 from fastapi import HTTPException
+from dotenv import load_dotenv
 
-SERVER = r'Kuro\SQL2025' # O la IP del servidor SQL Server
-DATABASE = 'TechFixS02' # O TechFixS02 dependiendo desde dónde levantes la API
-USERNAME = 'sa'
-PASSWORD = 'guille'
+# Esto busca el archivo .env en la misma carpeta y lo carga en memoria
+load_dotenv()
 
-# Cadena de conexión usando el driver más reciente recomendado
+# Leemos las credenciales. Si no las encuentra, devolverá None.
+SERVER = os.getenv("DB_SERVER")
+DATABASE = os.getenv("DB_DATABASE")
+USERNAME = os.getenv("DB_USERNAME")
+PASSWORD = os.getenv("DB_PASSWORD")
+
+# La cadena de conexión se arma dinámicamente con las variables inyectadas
 CONNECTION_STRING = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={SERVER};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD}"
 
 def get_db():
