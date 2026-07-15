@@ -1,5 +1,6 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 import pyodbc
 
 from database import get_db
@@ -20,13 +21,19 @@ class ClienteBase(BaseModel):
 # --- ENDPOINTS ---
 
 @router.get("/")
-def listar_clientes(db = Depends(get_db)):
+def listar_clientes(cedula: Optional[str] = None, db = Depends(get_db)):
     """Lista todos los clientes del catálogo global."""
     try:
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM Cliente")
 
-         # Obtenemos las filas crudas
+        if cedula:
+            query = "SELECT * FROM Cliente WHERE cedula_cliente = ?"
+            cursor.execute(query, (cedula,))
+        else:
+            query = "SELECT * FROM Cliente"
+            cursor.execute(query)
+
+        # Obtenemos las filas crudas
         filas = cursor.fetchall()
 
         # Extraemos los nombres de las columnas

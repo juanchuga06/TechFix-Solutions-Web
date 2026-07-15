@@ -1,5 +1,6 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, constr
+from pydantic import BaseModel
 import pyodbc
 
 # Importamos la dependencia de conexión
@@ -27,15 +28,20 @@ class TecnicoUpdate(TecnicoBase):
 # --- ENDPOINTS ---
 
 @router.get("/")
-def listar_tecnicos(sede: str = Query(..., description="Sede activa de la sesión (S01 o S02)"), db = Depends(get_db)):
+def listar_tecnicos(sede: str = Query(..., description="Sede activa de la sesión (S01 o S02)"), cedula_tecnico: Optional[str] = None, db = Depends(get_db)):
     """
     Lista los técnicos aplicando fragmentación horizontal según la sede activa.
     Consume la vista VDA_Tecnico.
     """
     try:
         cursor = db.cursor()
-        query = "SELECT * FROM VDA_Tecnico WHERE codigo_sede = ?"
-        cursor.execute(query, (sede,))
+
+        if cedula_tecnico:
+            query = "SELECT * FROM VDA_Tecnico WHERE cedula_tecnico = ?"
+            cursor.execute(query, (cedula_tecnico,))
+        else:
+            query = "SELECT * FROM VDA_Tecnico WHERE codigo_sede = ?"
+            cursor.execute(query, (sede,))
         
         # Obtenemos las filas crudas
         filas = cursor.fetchall()

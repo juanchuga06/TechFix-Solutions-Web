@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 import pyodbc
@@ -21,11 +22,17 @@ class RepuestoUpdate(RepuestoCreate):
 # --- ENDPOINTS ---
 
 @router.get("/")
-def listar_repuestos(db = Depends(get_db)):
+def listar_repuestos(codigo_repuesto: Optional[int] = None, db = Depends(get_db)):
     """Lista todos los repuestos del catálogo global."""
     try:
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM Repuesto")
+
+        if codigo_repuesto:
+            query = "SELECT * FROM Repuesto WHERE codigo_repuesto = ?"
+            cursor.execute(query, (codigo_repuesto,))
+        else:
+            query = "SELECT * FROM Repuesto"
+            cursor.execute(query)
         
         # Obtenemos las filas crudas
         filas = cursor.fetchall()
