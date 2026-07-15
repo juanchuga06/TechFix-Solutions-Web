@@ -6,263 +6,149 @@
   <title>TechFix Solutions – Orden de Servicio</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    body { display: flex; min-height: 100vh; background: #f5f5f5; }
-
-    /* ===== SIDEBAR (igual al dashboard) ===== */
-    .sidebar {
-      width: 200px; min-height: 100vh; background: #fff;
-      border-right: 1px solid #e0e0e0; display: flex;
-      flex-direction: column; flex-shrink: 0;
-    }
-    .sidebar-sede { background: #111; color: #fff; font-weight: 700; font-size: 15px; padding: 16px 18px; }
-    .sidebar-nav { flex: 1; padding: 10px 0; list-style: none; }
-    .sidebar-nav li a {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 18px; color: #333; text-decoration: none;
-      font-size: 14px; border-radius: 4px; margin: 2px 8px; transition: background 0.15s;
-    }
-    .sidebar-nav li a:hover { background: #f0f0f0; }
-    .sidebar-nav li a.active { background: #111; color: #fff; }
-    .sidebar-user {
-      border-top: 1px solid #e0e0e0; padding: 14px 18px;
-      display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.15s;
-    }
-    .sidebar-user:hover { background: #f5f5f5; }
-    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #ddd; border: 1px solid #bbb; flex-shrink: 0; }
-    .user-info .name { font-size: 13px; font-weight: 600; color: #111; }
-    .user-info .role { font-size: 12px; color: #888; }
-    .logout-panel { display: none; background: #f9f9f9; border-top: 1px solid #e0e0e0; padding: 12px 18px; font-size: 13px; }
-    .logout-panel.open { display: block; }
-    .logout-panel-title { font-weight: 600; color: #111; margin-bottom: 4px; }
-    .logout-panel-desc { color: #666; font-size: 12px; margin-bottom: 10px; line-height: 1.4; }
+    body { display: flex; min-height: 100vh; background: var(--surface); }
 
     /* ===== MAIN ===== */
     .main-content { flex: 1; padding: 28px 32px; max-width: 860px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--primary-navy); margin-bottom: 24px; }
 
-    .page-title { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 24px; }
-
-    /* ===== SECCIÓN ===== */
     .section-tag {
-      display: inline-block; border: 1px solid #999; border-radius: 20px;
-      padding: 3px 14px; font-size: 12px; font-weight: 600; color: #333;
+      display: inline-block; border: 1px solid rgba(0,212,255,0.40); border-radius: 20px;
+      padding: 3px 14px; font-size: 12px; font-weight: 600;
+      color: var(--accent-cyan-deep); background: rgba(0,212,255,0.06);
       margin-bottom: 18px; letter-spacing: 0.3px;
     }
 
     .form-section { margin-bottom: 32px; }
 
-    .field-row {
-      display: flex; align-items: flex-start; gap: 16px;
-      margin-bottom: 14px;
-    }
-
-    .field-row label {
-      min-width: 160px; font-size: 14px; font-weight: 500;
-      color: #222; padding-top: 8px;
-    }
-
-    .field-row .field-value {
-      font-size: 14px; color: #333; padding-top: 8px;
-    }
-
+    .field-row { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+    .field-row label { min-width: 160px; font-size: 14px; font-weight: 500; color: #222; padding-top: 8px; }
+    .field-row .field-value { font-size: 14px; color: #333; padding-top: 8px; }
     .field-row .field-control { flex: 1; }
 
     /* ===== AUTOCOMPLETE ===== */
     .autocomplete-wrap { position: relative; }
-
     .autocomplete-wrap input {
       width: 100%; padding: 8px 12px 8px 32px;
-      border: 1px solid #ccc; border-radius: 4px;
-      font-size: 14px; outline: none; background: #fff;
+      border: 1px solid var(--border-subtle); border-radius: 6px;
+      font-size: 14px; outline: none; background: #fff; transition: border-color 0.2s;
     }
-
-    .autocomplete-wrap input:focus { border-color: #333; }
-
-    .autocomplete-icon {
-      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-      font-size: 13px; color: #999; pointer-events: none;
-    }
-
+    .autocomplete-wrap input:focus { border-color: var(--accent-cyan); }
+    .autocomplete-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #999; pointer-events: none; }
     .autocomplete-list {
       display: none; position: absolute; top: 100%; left: 0; right: 0;
-      background: #fff; border: 1px solid #ccc; border-top: none;
-      border-radius: 0 0 4px 4px; z-index: 10; max-height: 160px; overflow-y: auto;
+      background: #fff; border: 1px solid var(--border-subtle); border-top: none;
+      border-radius: 0 0 6px 6px; z-index: 10; max-height: 160px; overflow-y: auto;
+      box-shadow: var(--shadow-md);
     }
-
     .autocomplete-list.open { display: block; }
-
-    .autocomplete-list li {
-      padding: 8px 12px; font-size: 14px; cursor: pointer; list-style: none;
-      transition: background 0.12s;
-    }
-
-    .autocomplete-list li:hover { background: #f0f0f0; }
+    .autocomplete-list li { padding: 8px 12px; font-size: 14px; cursor: pointer; list-style: none; transition: background 0.12s; }
+    .autocomplete-list li:hover { background: rgba(0,212,255,0.07); }
 
     /* ===== SELECT & TEXTAREA ===== */
     .field-control select, .field-control textarea {
-      width: 100%; padding: 8px 12px; border: 1px solid #ccc;
-      border-radius: 4px; font-size: 14px; outline: none;
-      font-family: inherit; background: #fff;
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border-subtle);
+      border-radius: 6px; font-size: 14px; outline: none; font-family: inherit; background: #fff;
     }
-
-    .field-control select:focus,
-    .field-control textarea:focus { border-color: #333; }
-
+    .field-control select:focus, .field-control textarea:focus { border-color: var(--accent-cyan); }
     .field-control textarea { resize: vertical; min-height: 90px; }
 
     /* ===== TABLA REPUESTOS ===== */
-    .repuestos-table-wrap {
-      border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; margin-top: 12px;
-    }
-
+    .repuestos-table-wrap { border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; margin-top: 12px; box-shadow: var(--shadow-sm); }
     .repuestos-table-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; }
-
-    .repuestos-table-wrap thead th {
-      background: #111; color: #fff; padding: 10px 14px; text-align: left; font-weight: 500;
-    }
-
-    .repuestos-table-wrap tbody tr { border-bottom: 1px solid #eee; }
+    .repuestos-table-wrap thead th { background: var(--grad-thead); color: #fff; padding: 10px 14px; text-align: left; font-weight: 500; }
+    .repuestos-table-wrap tbody tr { border-bottom: 1px solid #EEEFF1; }
     .repuestos-table-wrap tbody tr:last-child { border-bottom: none; }
-    .repuestos-table-wrap tbody td { padding: 9px 14px; color: #444; }
+    .repuestos-table-wrap tbody td { padding: 9px 14px; color: #374151; }
 
     .qty-control { display: flex; align-items: center; gap: 6px; }
-
     .qty-control button {
-      width: 24px; height: 24px; border: 1px solid #ccc; background: #fff;
+      width: 24px; height: 24px; border: 1px solid var(--border-subtle); background: #fff;
       border-radius: 3px; font-size: 14px; cursor: pointer; line-height: 1;
-      display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: center; justify-content: center; transition: background 0.15s;
     }
-
-    .qty-control button:hover { background: #f0f0f0; }
+    .qty-control button:hover { background: rgba(0,212,255,0.08); border-color: var(--accent-cyan); }
     .qty-control span { min-width: 20px; text-align: center; font-size: 14px; }
 
-    /* ===== CAMPO EDITABLE (modo editar) ===== */
-    .edit-field-row {
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .edit-field-row label {
-      min-width: 160px; font-size: 14px; font-weight: 600; color: #222;
-    }
-
-    .edit-field-row .field-display {
-      font-size: 14px; color: #333; flex: 1;
-    }
-
+    /* ===== CAMPOS EDITABLES ===== */
+    .edit-field-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .edit-field-row label { min-width: 160px; font-size: 14px; font-weight: 600; color: #222; }
+    .edit-field-row .field-display { font-size: 14px; color: #333; flex: 1; }
     .edit-field-row .field-input-wrap { flex: 1; display: none; }
-
     .edit-field-row.editing .field-display { display: none; }
     .edit-field-row.editing .field-input-wrap { display: block; }
 
-    .pencil-btn {
-      background: none; border: none; cursor: pointer;
-      font-size: 15px; color: #666; padding: 2px 4px;
-      transition: color 0.15s;
-    }
-    .pencil-btn:hover { color: #111; }
+    .pencil-btn { background: none; border: none; cursor: pointer; font-size: 15px; color: #666; padding: 2px 4px; transition: color 0.15s; }
+    .pencil-btn:hover { color: var(--primary-navy); }
 
-    /* fecha display en modo editar */
-    .fecha-display-row {
-      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
-    }
-    .fecha-display-row label {
-      min-width: 160px; font-size: 14px; font-weight: 600; color: #222;
-    }
+    .fecha-display-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .fecha-display-row label { min-width: 160px; font-size: 14px; font-weight: 600; color: #222; }
     .fecha-display-row .fecha-val { font-size: 14px; color: #333; }
     .cal-hidden { display: none; margin-top: 8px; }
 
     .field-inline-input {
-      width: 100%; padding: 6px 10px; border: 1px solid #ccc;
-      border-radius: 4px; font-size: 14px; outline: none;
+      width: 100%; padding: 6px 10px; border: 1px solid var(--border-subtle);
+      border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s;
     }
-    .field-inline-input:focus { border-color: #333; }
-
+    .field-inline-input:focus { border-color: var(--accent-cyan); }
     .edit-field-row textarea {
-      width: 100%; padding: 6px 10px; border: 1px solid #ccc;
-      border-radius: 4px; font-size: 14px; font-family: inherit;
-      resize: vertical; min-height: 70px; outline: none;
+      width: 100%; padding: 6px 10px; border: 1px solid var(--border-subtle);
+      border-radius: 6px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 70px; outline: none;
     }
-    .edit-field-row textarea:focus { border-color: #333; }
+    .edit-field-row textarea:focus { border-color: var(--accent-cyan); }
     .edit-field-row select {
-      width: 100%; padding: 6px 10px; border: 1px solid #ccc;
-      border-radius: 4px; font-size: 14px; outline: none; background: #fff;
+      width: 100%; padding: 6px 10px; border: 1px solid var(--border-subtle);
+      border-radius: 6px; font-size: 14px; outline: none; background: #fff;
     }
     .form-actions {
       display: flex; justify-content: flex-end; gap: 12px;
-      padding-top: 16px; border-top: 1px solid #e0e0e0; margin-top: 8px;
+      padding-top: 16px; border-top: 1px solid var(--border-subtle); margin-top: 8px;
     }
 
     /* ===== CALENDAR ===== */
     .calendar-wrap {
-      display: inline-block;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 16px 20px;
-      background: #fff;
-      min-width: 300px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      display: inline-block; border: 1px solid var(--border-subtle); border-radius: 10px;
+      padding: 16px 20px; background: #fff; min-width: 300px; box-shadow: var(--shadow-md);
     }
-
-    .cal-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 14px;
-    }
-
-    .cal-header span {
-      font-size: 15px; font-weight: 700; color: #111;
-    }
-
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .cal-header span { font-size: 15px; font-weight: 700; color: var(--primary-navy); }
     .cal-header button {
-      background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px;
-      font-size: 16px; cursor: pointer; color: #333;
+      background: var(--neutral-grey); border: 1px solid var(--border-subtle); border-radius: 4px;
+      font-size: 16px; cursor: pointer; color: var(--primary-navy);
       width: 28px; height: 28px; display: flex; align-items: center;
       justify-content: center; line-height: 1; transition: background 0.15s;
     }
-
-    .cal-header button:hover { background: #e0e0e0; color: #111; }
-
-    .cal-table {
-      width: 100%; border-collapse: separate; border-spacing: 2px; font-size: 13px;
-    }
-
+    .cal-header button:hover { background: rgba(0,212,255,0.12); border-color: var(--accent-cyan); }
+    .cal-table { width: 100%; border-collapse: separate; border-spacing: 2px; font-size: 13px; }
     .cal-table thead th {
-      background: none; color: #888; font-weight: 600;
-      text-align: center; padding: 4px 0; font-size: 12px;
-      letter-spacing: 0.3px;
+      background: none !important; color: #888 !important; font-weight: 600;
+      text-align: center; padding: 4px 0; font-size: 12px; letter-spacing: 0.3px; border: none;
     }
-
-    .cal-table tbody td {
-      text-align: center; padding: 2px;
-    }
-
+    .cal-table tbody td { text-align: center; padding: 2px; background: none; border: none; }
+    .cal-table tbody tr { border: none; background: none; }
+    .cal-table tbody tr:hover { background: none; }
     .cal-table tbody td span {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border-radius: 50%;
       cursor: pointer; transition: background 0.15s, color 0.15s;
       font-size: 13px; color: #333; font-weight: 400;
     }
-
-    .cal-table tbody td span:hover:not(.other-month) { background: #f0f0f0; }
-
-    .cal-table tbody td span.today {
-      font-weight: 700; border: 2px solid #111; color: #111;
-    }
-
-    .cal-table tbody td span.selected {
-      background: #111; color: #fff; font-weight: 600;
-    }
-
-    .cal-table tbody td span.selected.today { border-color: #fff; }
-
+    .cal-table tbody td span:hover:not(.other-month) { background: rgba(0,212,255,0.10); }
+    .cal-table tbody td span.today { font-weight: 700; border: 2px solid var(--accent-cyan); color: var(--accent-cyan-deep); }
+    .cal-table tbody td span.selected { background: var(--grad-btn-primary) !important; color: var(--primary-navy) !important; font-weight: 700; }
     .cal-table tbody td span.other-month { color: #ccc; cursor: default; }
     .cal-table tbody td span.other-month:hover { background: none; }
+    .cal-table tbody td span.disabled-date { color: #ccc; cursor: not-allowed; pointer-events: none; }
   </style>
 </head>
 <body>
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
-  <div class="sidebar-sede" id="sedeLabel">Sede: NORTE</div>
+  <div class="sidebar-sede" id="sedeLabel">
+    <img src="img/logo.svg" alt="" width="22" height="22" style="vertical-align:middle; margin-right:8px;">
+    <span id="sedeLabelText">Sede: NORTE</span>
+  </div>
   <ul class="sidebar-nav">
     <li><a href="dashboard.html"><span>🏠</span> Home</a></li>
     <li><a href="ordenes.html" class="active"><span>📋</span> Ordenes de servicio</a></li>
@@ -299,7 +185,7 @@
         <div class="field-control">
           <div class="autocomplete-wrap">
             <span class="autocomplete-icon">🔍</span>
-            <input type="text" id="buscarCliente" placeholder="Search..." autocomplete="off" />
+            <input type="text" id="buscarCliente" placeholder="Buscar por cédula..." autocomplete="off" />
             <ul class="autocomplete-list" id="listaClientes"></ul>
           </div>
         </div>
@@ -314,31 +200,25 @@
       </div>
     </div>
 
-    <!-- Modo EDITAR: prellenado + lápiz -->
+    <!-- Modo EDITAR: cédula con buscador; nombre y teléfono de solo lectura -->
     <div id="sec1Editar" style="display:none;">
-      <div class="edit-field-row" id="rowCedula">
-        <label>Cédula Cliente</label>
-        <span class="field-display" id="dispCedula"></span>
-        <div class="field-input-wrap">
-          <input type="text" id="editCedula" class="field-inline-input" />
+      <div class="field-row">
+        <label>Cédula Cliente:</label>
+        <div class="field-control">
+          <div class="autocomplete-wrap">
+            <span class="autocomplete-icon">🔍</span>
+            <input type="text" id="editBuscarCliente" placeholder="Buscar por cédula..." autocomplete="off" />
+            <ul class="autocomplete-list" id="editListaClientes"></ul>
+          </div>
         </div>
-        <button class="pencil-btn" data-row="rowCedula" title="Editar">✏️</button>
       </div>
-      <div class="edit-field-row" id="rowNombre">
+      <div class="field-row">
         <label>Nombre:</label>
-        <span class="field-display" id="dispNombre"></span>
-        <div class="field-input-wrap">
-          <input type="text" id="editNombre" class="field-inline-input" />
-        </div>
-        <button class="pencil-btn" data-row="rowNombre" title="Editar">✏️</button>
+        <div class="field-value" id="dispNombre">—</div>
       </div>
-      <div class="edit-field-row" id="rowTelefono">
+      <div class="field-row">
         <label>Teléfono:</label>
-        <span class="field-display" id="dispTelefono"></span>
-        <div class="field-input-wrap">
-          <input type="text" id="editTelefono" class="field-inline-input" />
-        </div>
-        <button class="pencil-btn" data-row="rowTelefono" title="Editar">✏️</button>
+        <div class="field-value" id="dispTelefono">—</div>
       </div>
     </div>
   </div>
@@ -350,11 +230,11 @@
     <!-- Modo NUEVA orden -->
     <div id="sec2Nueva">
       <div class="field-row">
-        <label>Técnico Asignado:</label>
+        <label>Nombre del Técnico Asignado:</label>
         <div class="field-control">
           <div class="autocomplete-wrap">
             <span class="autocomplete-icon">🔍</span>
-            <input type="text" id="buscarTecnico" placeholder="Search..." autocomplete="off" />
+            <input type="text" id="buscarTecnico" placeholder="Buscar por nombre..." autocomplete="off" />
             <ul class="autocomplete-list" id="listaTecnicos"></ul>
           </div>
         </div>
@@ -366,7 +246,6 @@
             <option value="Pendiente" selected>Pendiente</option>
             <option value="En proceso">En proceso</option>
             <option value="Finalizada">Finalizada</option>
-            <option value="Cancelada">Cancelada</option>
           </select>
         </div>
       </div>
@@ -378,36 +257,33 @@
       </div>
     </div>
 
-    <!-- Modo EDITAR -->
+    <!-- Modo EDITAR: técnico con buscador; estado y descripción editables directamente -->
     <div id="sec2Editar" style="display:none;">
-      <div class="edit-field-row" id="rowTecnico">
-        <label>Técnico Asignado:</label>
-        <span class="field-display" id="dispTecnico"></span>
-        <div class="field-input-wrap">
-          <input type="text" id="editTecnico" class="field-inline-input" />
+      <div class="field-row">
+        <label>Nombre del Técnico Asignado:</label>
+        <div class="field-control">
+          <div class="autocomplete-wrap">
+            <span class="autocomplete-icon">🔍</span>
+            <input type="text" id="editBuscarTecnico" placeholder="Buscar por nombre..." autocomplete="off" />
+            <ul class="autocomplete-list" id="editListaTecnicos"></ul>
+          </div>
         </div>
-        <button class="pencil-btn" data-row="rowTecnico" title="Editar">✏️</button>
       </div>
-      <div class="edit-field-row" id="rowEstado">
+      <div class="field-row">
         <label>Estado de la Orden:</label>
-        <span class="field-display" id="dispEstado"></span>
-        <div class="field-input-wrap">
+        <div class="field-control">
           <select id="editEstado">
             <option value="Pendiente">Pendiente</option>
             <option value="En proceso">En proceso</option>
             <option value="Finalizada">Finalizada</option>
-            <option value="Cancelada">Cancelada</option>
           </select>
         </div>
-        <button class="pencil-btn" data-row="rowEstado" title="Editar">✏️</button>
       </div>
-      <div class="edit-field-row" id="rowDescripcion">
+      <div class="field-row">
         <label>Descripción del fallo:</label>
-        <span class="field-display" id="dispDescripcion"></span>
-        <div class="field-input-wrap">
-          <textarea id="editDescripcion"></textarea>
+        <div class="field-control">
+          <textarea id="editDescripcion" placeholder="Type here..."></textarea>
         </div>
-        <button class="pencil-btn" data-row="rowDescripcion" title="Editar">✏️</button>
       </div>
     </div>
   </div>
@@ -417,11 +293,11 @@
     <div class="section-tag">3. ASIGNACIÓN DE REPUESTOS</div>
 
     <div class="field-row">
-      <label>Buscar en Catálogo:</label>
+      <label>Buscar Repuesto por Código:</label>
       <div class="field-control">
         <div class="autocomplete-wrap">
           <span class="autocomplete-icon">🔍</span>
-          <input type="text" id="buscarRepuesto" placeholder="Search..." autocomplete="off" />
+          <input type="text" id="buscarRepuesto" placeholder="Buscar por código..." autocomplete="off" />
           <ul class="autocomplete-list" id="listaRepuestos"></ul>
         </div>
       </div>
@@ -432,15 +308,12 @@
         <thead>
           <tr>
             <th>Código</th>
-            <th>Nombre de la Pieza</th>
-            <th>Costo Unitario</th>
             <th>Unidades</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="bodyRepuestos">
           <tr id="emptyRepuestos">
-            <td colspan="5" style="text-align:center; color:#aaa; padding:16px;">
+            <td colspan="3" style="text-align:center; color:#aaa; padding:16px;">
               Sin repuestos agregados
             </td>
           </tr>
@@ -453,7 +326,7 @@
   <div class="form-section">
     <div class="section-tag" id="sec4Tag">4. INFORMACIÓN DE ORDEN</div>
 
-    <!-- Modo EDITAR: número de orden + fecha con lápiz -->
+    <!-- Modo EDITAR: número de orden + fecha, ambos de solo lectura -->
     <div id="sec4Editar" style="display:none;">
       <div class="fecha-display-row">
         <label>Número Orden:</label>
@@ -462,7 +335,6 @@
       <div class="fecha-display-row">
         <label>Fecha Ingreso:</label>
         <span class="fecha-val" id="dispFecha"></span>
-        <button class="pencil-btn" id="btnEditFecha" title="Editar fecha">✏️</button>
       </div>
     </div>
 
@@ -525,18 +397,17 @@
       <div class="field-row">
         <label>Horas de Laboratorio:</label>
         <div class="field-control">
-          <input type="number" id="horasLaboratorio" min="0" placeholder="0..."
+          <input type="number" id="horasLaboratorio" min="1" step="1" placeholder="0..."
             style="width:90px; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px; outline:none;" />
         </div>
       </div>
     </div>
 
-    <!-- Modo EDITAR: prellenado con lápiz -->
+    <!-- Modo EDITAR: controles directamente editables, sin lápices -->
     <div id="sec5Editar" style="display:none;">
-      <div class="edit-field-row" id="rowEncriptacion">
+      <div class="field-row">
         <label>Nivel de Encriptación:</label>
-        <span class="field-display" id="dispEncriptacion"></span>
-        <div class="field-input-wrap">
+        <div class="field-control">
           <select id="editEncriptacion">
             <option value="AES-128">AES-128</option>
             <option value="AES-256">AES-256</option>
@@ -544,12 +415,10 @@
             <option value="RSA-4096">RSA-4096</option>
           </select>
         </div>
-        <button class="pencil-btn" data-row="rowEncriptacion" title="Editar">✏️</button>
       </div>
-      <div class="edit-field-row" id="rowProtocolo">
+      <div class="field-row">
         <label>Protocolo de Seguridad:</label>
-        <span class="field-display" id="dispProtocolo"></span>
-        <div class="field-input-wrap">
+        <div class="field-control">
           <select id="editProtocolo">
             <option value="TLS 1.2">TLS 1.2</option>
             <option value="TLS 1.3">TLS 1.3</option>
@@ -557,16 +426,13 @@
             <option value="IPSec">IPSec</option>
           </select>
         </div>
-        <button class="pencil-btn" data-row="rowProtocolo" title="Editar">✏️</button>
       </div>
-      <div class="edit-field-row" id="rowHoras">
+      <div class="field-row">
         <label>Horas de Laboratorio:</label>
-        <span class="field-display" id="dispHoras"></span>
-        <div class="field-input-wrap">
-          <input type="number" id="editHoras" min="0"
-            style="width:90px; padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px; outline:none;" />
+        <div class="field-control">
+          <input type="number" id="editHoras" min="1" step="1" placeholder="0..."
+            style="width:90px; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px; outline:none;" />
         </div>
-        <button class="pencil-btn" data-row="rowHoras" title="Editar">✏️</button>
       </div>
     </div>
   </div>

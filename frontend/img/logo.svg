@@ -1,0 +1,36 @@
+<svg width="36" height="36" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="TechFix Solutions">
+  <!-- Engranaje exterior -->
+  <path d="M40 8 L44 2 L36 2 Z M53 11 L59 7 L54 3 Z M27 11 L21 7 L26 3 Z
+           M63 19 L70 15 L65 10 Z M17 19 L10 15 L15 10 Z
+           M67 31 L74 30 L72 23 Z M13 31 L6 30 L8 23 Z
+           M67 49 L74 50 L72 57 Z M13 49 L6 50 L8 57 Z
+           M63 61 L70 65 L65 70 Z M17 61 L10 65 L15 70 Z
+           M53 69 L59 73 L54 77 Z M27 69 L21 73 L26 77 Z
+           M40 72 L44 78 L36 78 Z"
+        fill="#8899AA" stroke="#AAB8C8" stroke-width="0.5"/>
+  <circle cx="40" cy="40" r="28" fill="url(#gb)" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+  <g stroke="#00D4FF" stroke-width="1.2" stroke-linecap="round">
+    <line x1="40" y1="40" x2="40" y2="22"/>
+    <line x1="40" y1="40" x2="55" y2="32"/>
+    <line x1="40" y1="40" x2="55" y2="48"/>
+    <line x1="40" y1="40" x2="40" y2="58"/>
+    <line x1="40" y1="40" x2="25" y2="48"/>
+    <line x1="40" y1="40" x2="25" y2="32"/>
+    <circle cx="40" cy="22" r="2" fill="#00D4FF"/>
+    <circle cx="55" cy="32" r="2" fill="#00D4FF"/>
+    <circle cx="55" cy="48" r="2" fill="#00D4FF"/>
+    <circle cx="40" cy="58" r="2" fill="#00D4FF"/>
+    <circle cx="25" cy="48" r="2" fill="#00D4FF"/>
+    <circle cx="25" cy="32" r="2" fill="#00D4FF"/>
+  </g>
+  <polyline points="28,40 33,40 35,33 37,47 39,36 41,44 43,40 52,40"
+            fill="none" stroke="#E63946" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="40" cy="40" r="4" fill="#E63946"/>
+  <circle cx="40" cy="40" r="2" fill="#FF6B75"/>
+  <defs>
+    <radialGradient id="gb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1B3A5C"/>
+      <stop offset="100%" stop-color="#0D1B2A"/>
+    </radialGradient>
+  </defs>
+</svg>

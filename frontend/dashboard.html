@@ -6,212 +6,62 @@
   <title>TechFix Solutions – Dashboard</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    body { display: flex; flex-direction: column; min-height: 100vh; background: #f5f5f5; }
+    body { display: flex; flex-direction: column; min-height: 100vh; background: var(--surface); }
 
-    /* ===== LAYOUT ===== */
-    .app-layout {
-      display: flex;
-      flex: 1;
-    }
-
-    /* ===== SIDEBAR ===== */
-    .sidebar {
-      width: 200px;
-      min-height: 100vh;
-      background: #fff;
-      border-right: 1px solid #e0e0e0;
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-    }
-
-    .sidebar-sede {
-      background: #111;
-      color: #fff;
-      font-weight: 700;
-      font-size: 15px;
-      padding: 16px 18px;
-      letter-spacing: 0.3px;
-    }
-
-    .sidebar-nav {
-      flex: 1;
-      padding: 10px 0;
-      list-style: none;
-    }
-
-    .sidebar-nav li a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 18px;
-      color: #333;
-      text-decoration: none;
-      font-size: 14px;
-      border-radius: 4px;
-      margin: 2px 8px;
-      transition: background 0.15s;
-    }
-
-    .sidebar-nav li a:hover {
-      background: #f0f0f0;
-    }
-
-    .sidebar-nav li a.active {
-      background: #111;
-      color: #fff;
-    }
-
-    .sidebar-nav li a .icon {
-      font-size: 15px;
-    }
-
-    .sidebar-user {
-      border-top: 1px solid #e0e0e0;
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .sidebar-user .avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: #ddd;
-      border: 1px solid #bbb;
-      flex-shrink: 0;
-    }
-
-    .sidebar-user .user-info .name {
-      font-size: 13px;
-      font-weight: 600;
-      color: #111;
-    }
-
-    .sidebar-user .user-info .role {
-      font-size: 12px;
-      color: #888;
-    }
+    .app-layout { display: flex; flex: 1; }
 
     /* ===== MAIN ===== */
-    .main-content {
-      flex: 1;
-      padding: 28px 32px;
-      overflow-y: auto;
-    }
+    .main-content { flex: 1; padding: 28px 32px; overflow-y: auto; }
 
-    /* ===== SECTION ===== */
     .section-title {
-      font-size: 26px;
-      font-weight: 700;
-      color: #111;
-      margin-bottom: 14px;
+      font-size: 22px; font-weight: 700; color: var(--primary-navy); margin-bottom: 14px;
     }
 
-    .section-block {
-      margin-bottom: 40px;
-    }
+    .section-block { margin-bottom: 40px; }
 
-    /* ===== SEARCH + ACTIONS BAR ===== */
+    /* ===== TOOLBAR ===== */
     .table-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 10px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; flex-wrap: wrap; gap: 10px;
     }
 
     .table-toolbar .search-input {
-      display: flex;
-      align-items: center;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #fff;
-      padding: 6px 12px;
-      gap: 8px;
-      width: 320px;
+      display: flex; align-items: center;
+      border: 1px solid var(--border-subtle); border-radius: 6px;
+      background: var(--surface-card); padding: 6px 12px; gap: 8px; width: 320px;
+      box-shadow: var(--shadow-sm);
     }
 
     .table-toolbar .search-input input {
-      border: none;
-      outline: none;
-      font-size: 13px;
-      color: #555;
-      width: 100%;
-      background: transparent;
+      border: none; outline: none; font-size: 13px; color: #555; width: 100%; background: transparent;
     }
 
-    .table-toolbar .search-input .search-icon {
-      color: #999;
-      font-size: 14px;
-    }
-
-    .table-actions {
-      display: flex;
-      gap: 8px;
-    }
+    .table-toolbar .search-input .search-icon { color: #999; font-size: 14px; }
+    .table-actions { display: flex; gap: 8px; }
 
     /* ===== SCROLLABLE TABLE ===== */
     .table-scroll {
-      max-height: 260px;
-      overflow-y: auto;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
+      max-height: 260px; overflow-y: auto;
+      border: 1px solid var(--border-subtle); border-radius: 8px;
+      box-shadow: var(--shadow-sm);
     }
 
-    .table-scroll table {
-      min-width: 700px;
-    }
+    .table-scroll table { min-width: 700px; }
+    .table-scroll thead th { position: sticky; top: 0; z-index: 1; }
 
-    .table-scroll thead th {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-
-    tbody tr.selected {
-      background: #e8f0fe !important;
-    }
-
+    tbody tr.selected { background: rgba(0,212,255,0.10) !important; }
     tbody tr { cursor: pointer; }
 
-    /* ===== LOGOUT PANEL ===== */
-    .sidebar-user {
-      border-top: 1px solid #e0e0e0;
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
+    /* ===== TABLA — texto wrap ===== */
+    .table-scroll tbody td { white-space: normal; word-wrap: break-word; word-break: break-word; }
 
-    .sidebar-user:hover { background: #f5f5f5; }
+    #tablaTodasOrdenes th:nth-child(5),
+    #tablaTodasOrdenes td:nth-child(5),
+    #tablaTodasOrdenes th:nth-child(6),
+    #tablaTodasOrdenes td:nth-child(6) { min-width: 140px; white-space: nowrap; }
 
-    .logout-panel {
-      display: none;
-      background: #f9f9f9;
-      border-top: 1px solid #e0e0e0;
-      padding: 12px 18px;
-      font-size: 13px;
-    }
-
-    .logout-panel.open { display: block; }
-
-    .logout-panel-title {
-      font-weight: 600;
-      color: #111;
-      margin-bottom: 4px;
-    }
-
-    .logout-panel-desc {
-      color: #666;
-      font-size: 12px;
-      margin-bottom: 10px;
-      line-height: 1.4;
-    }
+    #tablaTodasOrdenes th:nth-child(3),
+    #tablaTodasOrdenes td:nth-child(3) { max-width: 200px; }
   </style>
 </head>
 <body>
@@ -220,7 +70,10 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="sidebar-sede" id="sedeLabel">Sede: NORTE</div>
+  <div class="sidebar-sede" id="sedeLabel">
+    <img src="img/logo.svg" alt="" width="22" height="22" style="vertical-align:middle; margin-right:8px;">
+    <span id="sedeLabelText">Sede: NORTE</span>
+  </div>
     <ul class="sidebar-nav">
       <li>
         <a href="dashboard.html" class="active">
@@ -392,7 +245,7 @@
     <p style="font-size:12px; color:#888; margin-bottom:24px;">Esta acción es irreversible.</p>
     <div style="display:flex; justify-content:center; gap:16px;">
       <button class="btn btn-secondary" id="btnCancelarEliminar">Cancelar</button>
-      <button class="btn btn-primary" id="btnConfirmarEliminar">Eliminar</button>
+      <button class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
     </div>
   </div>
 </div>

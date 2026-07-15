@@ -255,5 +255,10 @@ document.getElementById('btnLogout').addEventListener('click', () => {
   window.location.href = 'index.html';
 });
 
+// ===== Filtro numérico en campo cédula =====
+document.getElementById('fCedula').addEventListener('input', function () {
+  this.value = this.value.replace(/[^0-9]/g, '');
+});
+
 // ===== Inicializar =====
 renderTabla();

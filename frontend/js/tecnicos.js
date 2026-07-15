@@ -3,6 +3,8 @@ const sede    = sessionStorage.getItem('sede') || 'norte';
 const usuario = sessionStorage.getItem('usuario') || 'Usuario';
 document.getElementById('sedeLabel').textContent       = 'Sede: ' + sede.toUpperCase();
 document.getElementById('sidebarUserName').textContent = usuario;
+document.getElementById('pageTitleTecnicos').textContent =
+  'Personal técnico de la Sede ' + sede.charAt(0).toUpperCase() + sede.slice(1);
 
 document.getElementById('sidebarUserBtn').addEventListener('click', function() {
   document.getElementById('logoutPanel').classList.toggle('open');
@@ -201,6 +203,11 @@ document.getElementById('btnAceptarActualizadoTec').addEventListener('click', fu
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
   });
+});
+
+// ===== Filtro numérico en campo cédula (modal agregar técnico) =====
+document.getElementById('agCedula').addEventListener('input', function () {
+  this.value = this.value.replace(/[^0-9]/g, '');
 });
 
 // ===== Inicializar =====

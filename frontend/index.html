@@ -10,8 +10,50 @@
 
   <div class="login-container">
 
-    <!-- Logo placeholder (X en caja) -->
-    <div class="login-logo"></div>
+    <!-- Logo SVG TechFix Solutions -->
+    <div class="login-logo">
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="TechFix Solutions logo">
+        <!-- Engranaje exterior -->
+        <path d="M40 8 L43.5 3 L36.5 3 Z M52 10.5 L57.5 7 L53 3.5 Z M28 10.5 L22.5 7 L27 3.5 Z
+                 M62 18 L68 14.5 L64 10 Z M18 18 L12 14.5 L16 10 Z
+                 M66 30 L72 29 L70 23 Z M14 30 L8 29 L10 23 Z
+                 M66 50 L72 51 L70 57 Z M14 50 L8 51 L10 57 Z
+                 M62 62 L68 65.5 L64 70 Z M18 62 L12 65.5 L16 70 Z
+                 M52 69.5 L57.5 73 L53 76.5 Z M28 69.5 L22.5 73 L27 76.5 Z
+                 M40 72 L43.5 77 L36.5 77 Z"
+              fill="#8899AA" stroke="#AAB8C8" stroke-width="0.5"/>
+        <!-- Círculo base del engranaje -->
+        <circle cx="40" cy="40" r="28" fill="url(#gearBg)" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+        <!-- Circuitos (líneas en cyan) -->
+        <g stroke="#00D4FF" stroke-width="1.2" stroke-linecap="round">
+          <line x1="40" y1="40" x2="40" y2="22"/>
+          <line x1="40" y1="40" x2="55" y2="32"/>
+          <line x1="40" y1="40" x2="55" y2="48"/>
+          <line x1="40" y1="40" x2="40" y2="58"/>
+          <line x1="40" y1="40" x2="25" y2="48"/>
+          <line x1="40" y1="40" x2="25" y2="32"/>
+          <!-- Nodos terminales cyan -->
+          <circle cx="40" cy="22" r="2" fill="#00D4FF"/>
+          <circle cx="55" cy="32" r="2" fill="#00D4FF"/>
+          <circle cx="55" cy="48" r="2" fill="#00D4FF"/>
+          <circle cx="40" cy="58" r="2" fill="#00D4FF"/>
+          <circle cx="25" cy="48" r="2" fill="#00D4FF"/>
+          <circle cx="25" cy="32" r="2" fill="#00D4FF"/>
+        </g>
+        <!-- Línea de latido (alert-red) -->
+        <polyline points="28,40 33,40 35,33 37,47 39,36 41,44 43,40 52,40"
+                  fill="none" stroke="#E63946" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Nodo central -->
+        <circle cx="40" cy="40" r="4" fill="#E63946"/>
+        <circle cx="40" cy="40" r="2" fill="#FF6B75"/>
+        <defs>
+          <radialGradient id="gearBg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#1B3A5C"/>
+            <stop offset="100%" stop-color="#0D1B2A"/>
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
 
     <h1 class="login-title">TechFix Solutions</h1>
     <p class="login-subtitle">Sistema de gestión de ordenes de TechFix Solutions</p>

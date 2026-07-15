@@ -1,113 +1,19 @@
 // ===== Sesión =====
-const sede    = sessionStorage.getItem('sede') || 'norte';
+const params  = new URLSearchParams(window.location.search);
+const sede    = sessionStorage.getItem('sede') || params.get('sede') || 'norte';
 const usuario = sessionStorage.getItem('usuario') || 'Usuario';
 const esSur   = sede === 'sur';
 
 document.getElementById('sedeLabel').textContent       = 'Sede: ' + sede.toUpperCase();
 document.getElementById('sidebarUserName').textContent = usuario;
 
-// Mostrar sección laboratorio solo en sede sur
 if (esSur) {
   document.getElementById('secLaboratorio').style.display = 'block';
 }
 
-
-const params = new URLSearchParams(window.location.search);
 const modoEditar = params.get('modo') === 'editar';
 
-if (modoEditar) {
-  document.getElementById('pageTitle').textContent = 'Modificar orden de servicio';
-  document.getElementById('btnGuardar').textContent = 'Guardar Cambios';
-
-  // Ocultar secciones de nueva orden, mostrar editar
-  document.getElementById('sec1Nueva').style.display = 'none';
-  document.getElementById('sec1Editar').style.display = 'block';
-  document.getElementById('sec2Nueva').style.display = 'none';
-  document.getElementById('sec2Editar').style.display = 'block';
-
-  // Sección 4 siempre muestra número de orden + fecha con lápiz
-  document.getElementById('sec4Editar').style.display = 'block';
-  document.getElementById('calWrapper').style.display = 'none';
-
-  // En sede sur: la sección 4 de info de orden se oculta, laboratorio pasa a ser sección 4
-  if (esSur) {
-    document.getElementById('sec4Tag').textContent = '';
-    document.getElementById('sec4Editar').style.display = 'none';
-  }
-
-  // Prellenar con datos mock del folio seleccionado
-  const folio = sessionStorage.getItem('ordenSeleccionada') || 'F-002';
-  // TODO: fetch('/api/ordenes/' + folio) — datos hardcodeados como stub
-  const ordenEditar = {
-    cedula: '1715624352', nombre: 'Karen Anahí Mosquera Tómala', telefono: '0990960044',
-    tecnico: 'Luis Martínez', estado: 'En proceso', descripcion: 'Limpieza y cambio de pasta térmica',
-    fecha: '2026-05-25',
-  };
-
-  document.getElementById('dispCedula').textContent    = ordenEditar.cedula;
-  document.getElementById('dispNombre').textContent    = ordenEditar.nombre;
-  document.getElementById('dispTelefono').textContent  = ordenEditar.telefono;
-  document.getElementById('dispTecnico').textContent   = ordenEditar.tecnico;
-  document.getElementById('dispEstado').textContent    = ordenEditar.estado;
-  document.getElementById('dispDescripcion').textContent = ordenEditar.descripcion;
-  document.getElementById('dispFecha').textContent     = ordenEditar.fecha;
-  document.getElementById('dispNumOrden').textContent  = folio;
-  document.getElementById('fechaIngreso').value        = ordenEditar.fecha;
-
-  // Prellenar inputs ocultos
-  document.getElementById('editCedula').value    = ordenEditar.cedula;
-  document.getElementById('editNombre').value    = ordenEditar.nombre;
-  document.getElementById('editTelefono').value  = ordenEditar.telefono;
-  document.getElementById('editTecnico').value   = ordenEditar.tecnico;
-  document.getElementById('editDescripcion').value = ordenEditar.descripcion;
-  const editEstado = document.getElementById('editEstado');
-  if (editEstado) editEstado.value = ordenEditar.estado;
-
-  // Navegar calendario al mes de la fecha prellenada
-  const [y, m] = ordenEditar.fecha.split('-').map(Number);
-  calDate = new Date(y, m - 1, 1);
-  selectedDate = new Date(y, m - 1, parseInt(ordenEditar.fecha.split('-')[2]));
-
-  // Prellenar repuestos mock
-  repuestosAgregados = [
-    { codigo: '001', nombre: 'Pantalla LCD',    costo: 150.00, qty: 1 },
-    { codigo: '002', nombre: 'Disco SSD 500GB', costo: 80.00,  qty: 2 },
-    { codigo: '003', nombre: 'Memoria RAM 8GB', costo: 45.00,  qty: 1 },
-  ];
-
-  // Prellenar laboratorio si es sede sur
-  if (esSur) {
-    const labMock = { encriptacion: 'AES-256', protocolo: 'TLS 1.3', horas: 4 };
-    document.getElementById('sec5Tag').textContent      = '4. LABORATORIO DE RECUPERACIÓN';
-    document.getElementById('sec5Editar').style.display = 'block';
-    document.getElementById('sec5Nueva').style.display  = 'none';
-    document.getElementById('dispEncriptacion').textContent = labMock.encriptacion;
-    document.getElementById('dispProtocolo').textContent    = labMock.protocolo;
-    document.getElementById('dispHoras').textContent        = labMock.horas + ' h';
-    document.getElementById('editEncriptacion').value = labMock.encriptacion;
-    document.getElementById('editProtocolo').value    = labMock.protocolo;
-    document.getElementById('editHoras').value        = labMock.horas;
-  }
-}
-
-// ===== Lápiz: toggle edición =====
-document.querySelectorAll('.pencil-btn[data-row]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const row = document.getElementById(btn.dataset.row);
-    row.classList.toggle('editing');
-  });
-});
-
-// Lápiz fecha — toggle calendario
-document.getElementById('btnEditFecha')?.addEventListener('click', () => {
-  const wrapper = document.getElementById('calWrapper');
-  const isHidden = wrapper.style.display === 'none' || wrapper.style.display === '';
-  wrapper.style.display = isHidden ? 'block' : 'none';
-  if (isHidden) renderCalendar();
-});
-
-
-// ===== Datos mock — reemplazar con fetch al API =====
+// ===== Datos mock =====
 const clientesMock = [
   { cedula: '1750094123', nombre: 'Karen Anahí Mosquera Tómala', telefono: '0990960044' },
   { cedula: '1715624352', nombre: 'Pedro Díaz Loor',              telefono: '0981234567' },
@@ -121,17 +27,132 @@ const tecnicosMock = [
 ];
 
 const catalogoMock = [
-  { codigo: '001', nombre: 'Pantalla LCD',    costo: 150.00 },
-  { codigo: '002', nombre: 'Disco SSD 500GB', costo: 80.00  },
-  { codigo: '003', nombre: 'Memoria RAM 8GB', costo: 45.00  },
-  { codigo: '004', nombre: 'Batería Li-Ion',  costo: 35.00  },
-  { codigo: '005', nombre: 'Teclado USB',     costo: 25.00  },
+  { codigo: '001' },
+  { codigo: '002' },
+  { codigo: '003' },
+  { codigo: '004' },
+  { codigo: '005' },
 ];
 
 // ===== Estado interno =====
 let clienteSeleccionado = null;
 let tecnicoSeleccionado = null;
-let repuestosAgregados  = []; // { codigo, nombre, costo, qty }
+let repuestosAgregados  = []; // { codigo, qty }
+
+// ===== Calendario =====
+let calDate    = new Date();
+let selectedDate = null;
+calDate.setDate(1);
+
+// ===== Render repuestos =====
+function renderRepuestos() {
+  const tbody = document.getElementById('bodyRepuestos');
+  tbody.innerHTML = '';
+
+  if (!repuestosAgregados.length) {
+    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#aaa;padding:16px;">Sin repuestos agregados</td></tr>';
+    return;
+  }
+
+  repuestosAgregados.forEach((r, i) => {
+    const tr = document.createElement('tr');
+
+    const tdCodigo = document.createElement('td');
+    tdCodigo.textContent = r.codigo;
+
+    const tdQty = document.createElement('td');
+    tdQty.innerHTML =
+      '<div class="qty-control">' +
+        '<button data-i="' + i + '" data-action="dec">\u2212</button>' +
+        '<span>' + r.qty + '</span>' +
+        '<button data-i="' + i + '" data-action="inc">+</button>' +
+      '</div>';
+
+    tr.appendChild(tdCodigo);
+    tr.appendChild(tdQty);
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i      = parseInt(btn.dataset.i);
+      const action = btn.dataset.action;
+      if (action === 'inc') {
+        repuestosAgregados[i].qty++;
+      }
+      if (action === 'dec') {
+        repuestosAgregados[i].qty--;
+        if (repuestosAgregados[i].qty <= 0) repuestosAgregados.splice(i, 1);
+      }
+      renderRepuestos();
+    });
+  });
+}
+
+// ===== Modo editar: prellenar datos =====
+if (modoEditar) {
+  document.getElementById('pageTitle').textContent  = 'Modificar orden de servicio';
+  document.getElementById('btnGuardar').textContent = 'Guardar Cambios';
+
+  document.getElementById('sec1Nueva').style.display  = 'none';
+  document.getElementById('sec1Editar').style.display = 'block';
+  document.getElementById('sec2Nueva').style.display  = 'none';
+  document.getElementById('sec2Editar').style.display = 'block';
+
+  document.getElementById('sec4Editar').style.display = 'block';
+  document.getElementById('calWrapper').style.display  = 'none';
+
+  if (esSur) {
+    document.getElementById('sec4Tag').textContent      = '';
+    document.getElementById('sec4Editar').style.display = 'none';
+  }
+
+  const folio = sessionStorage.getItem('ordenSeleccionada') || 'F-002';
+  // TODO: fetch('/api/ordenes/' + folio)
+  const ordenEditar = {
+    cedula: '1715624352', nombre: 'Karen Anahí Mosquera Tómala', telefono: '0990960044',
+    tecnico: 'Luis Mendoza', estado: 'En proceso', descripcion: 'Limpieza y cambio de pasta térmica',
+    fecha: '2026-05-25',
+  };
+
+  document.getElementById('editBuscarCliente').value = ordenEditar.cedula;
+  document.getElementById('dispNombre').textContent   = ordenEditar.nombre;
+  document.getElementById('dispTelefono').textContent = ordenEditar.telefono;
+  clienteSeleccionado = { cedula: ordenEditar.cedula, nombre: ordenEditar.nombre, telefono: ordenEditar.telefono };
+
+  document.getElementById('editBuscarTecnico').value = ordenEditar.tecnico;
+  tecnicoSeleccionado = tecnicosMock.find(t => t.nombre === ordenEditar.tecnico) || { id: '', nombre: ordenEditar.tecnico };
+
+  const editEstado = document.getElementById('editEstado');
+  if (editEstado) editEstado.value = ordenEditar.estado;
+  document.getElementById('editDescripcion').value = ordenEditar.descripcion;
+
+  document.getElementById('dispFecha').textContent    = ordenEditar.fecha;
+  document.getElementById('dispNumOrden').textContent = folio;
+  document.getElementById('fechaIngreso').value       = ordenEditar.fecha;
+
+  const [y, m] = ordenEditar.fecha.split('-').map(Number);
+  calDate      = new Date(y, m - 1, 1);
+  selectedDate = new Date(y, m - 1, parseInt(ordenEditar.fecha.split('-')[2]));
+
+  // Repuestos prellenados
+  repuestosAgregados = [
+    { codigo: '001', qty: 1 },
+    { codigo: '002', qty: 2 },
+    { codigo: '003', qty: 1 },
+  ];
+  renderRepuestos();
+
+  if (esSur) {
+    const labMock = { encriptacion: 'AES-256', protocolo: 'TLS 1.3', horas: 4 };
+    document.getElementById('sec5Tag').textContent      = '4. LABORATORIO DE RECUPERACIÓN';
+    document.getElementById('sec5Editar').style.display = 'block';
+    document.getElementById('sec5Nueva').style.display  = 'none';
+    document.getElementById('editEncriptacion').value   = labMock.encriptacion;
+    document.getElementById('editProtocolo').value      = labMock.protocolo;
+    document.getElementById('editHoras').value          = labMock.horas;
+  }
+}
 
 // ===== Helper: autocomplete genérico =====
 function setupAutocomplete({ inputId, listId, data, labelFn, onSelect }) {
@@ -159,7 +180,6 @@ function setupAutocomplete({ inputId, listId, data, labelFn, onSelect }) {
     list.classList.add('open');
   });
 
-  // Cerrar al hacer clic fuera
   document.addEventListener('click', e => {
     if (!input.contains(e.target) && !list.contains(e.target)) {
       list.classList.remove('open');
@@ -167,11 +187,9 @@ function setupAutocomplete({ inputId, listId, data, labelFn, onSelect }) {
   });
 }
 
-// ===== 1. Clientes =====
+// ===== Autocompletes =====
 setupAutocomplete({
-  inputId: 'buscarCliente',
-  listId:  'listaClientes',
-  data:    clientesMock,
+  inputId: 'buscarCliente', listId: 'listaClientes', data: clientesMock,
   labelFn: c => c.cedula,
   onSelect: c => {
     clienteSeleccionado = c;
@@ -180,90 +198,44 @@ setupAutocomplete({
   },
 });
 
-// ===== 2. Técnicos =====
 setupAutocomplete({
-  inputId: 'buscarTecnico',
-  listId:  'listaTecnicos',
-  data:    tecnicosMock,
+  inputId: 'buscarTecnico', listId: 'listaTecnicos', data: tecnicosMock,
   labelFn: t => t.nombre,
   onSelect: t => { tecnicoSeleccionado = t; },
 });
 
-// ===== 3. Repuestos =====
 setupAutocomplete({
-  inputId: 'buscarRepuesto',
-  listId:  'listaRepuestos',
-  data:    catalogoMock,
-  labelFn: r => r.nombre,
-  onSelect: r => {
-    document.getElementById('buscarRepuesto').value = '';
-    agregarRepuesto(r);
+  inputId: 'editBuscarCliente', listId: 'editListaClientes', data: clientesMock,
+  labelFn: c => c.cedula,
+  onSelect: c => {
+    clienteSeleccionado = c;
+    document.getElementById('dispNombre').textContent   = c.nombre;
+    document.getElementById('dispTelefono').textContent = c.telefono;
   },
 });
 
-function agregarRepuesto(r) {
-  const existente = repuestosAgregados.find(x => x.codigo === r.codigo);
-  if (existente) {
-    existente.qty++;
+setupAutocomplete({
+  inputId: 'editBuscarTecnico', listId: 'editListaTecnicos', data: tecnicosMock,
+  labelFn: t => t.nombre,
+  onSelect: t => { tecnicoSeleccionado = t; },
+});
+
+setupAutocomplete({
+  inputId: 'buscarRepuesto', listId: 'listaRepuestos', data: catalogoMock,
+  labelFn: r => r.codigo,
+  onSelect: r => {
+    document.getElementById('buscarRepuesto').value = '';
+    const existente = repuestosAgregados.find(x => x.codigo === r.codigo);
+    if (existente) {
+      existente.qty++;
+    } else {
+      repuestosAgregados.push({ codigo: r.codigo, qty: 0 });
+    }
     renderRepuestos();
-    return;
-  }
-  repuestosAgregados.push({ ...r, qty: 1 });
-  renderRepuestos();
-}
-
-function renderRepuestos() {
-  const tbody = document.getElementById('bodyRepuestos');
-  tbody.innerHTML = '';
-
-  if (!repuestosAgregados.length) {
-    tbody.innerHTML = `<tr id="emptyRepuestos">
-      <td colspan="5" style="text-align:center;color:#aaa;padding:16px;">Sin repuestos agregados</td>
-    </tr>`;
-    return;
-  }
-
-  repuestosAgregados.forEach((r, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${r.codigo}</td>
-      <td>${r.nombre}</td>
-      <td>$${r.costo.toFixed(2)}</td>
-      <td>
-        <div class="qty-control">
-          <button data-i="${i}" data-action="dec">−</button>
-          <span>${r.qty}</span>
-          <button data-i="${i}" data-action="inc">+</button>
-        </div>
-      </td>
-      <td>
-        <button class="btn btn-danger btn-sm" data-i="${i}" data-action="del">Eliminar</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  // Eventos qty / eliminar
-  tbody.querySelectorAll('button[data-action]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const i      = parseInt(btn.dataset.i);
-      const action = btn.dataset.action;
-      if (action === 'inc') repuestosAgregados[i].qty++;
-      if (action === 'dec') {
-        repuestosAgregados[i].qty--;
-        if (repuestosAgregados[i].qty <= 0) repuestosAgregados.splice(i, 1);
-      }
-      if (action === 'del') repuestosAgregados.splice(i, 1);
-      renderRepuestos();
-    });
-  });
-}
+  },
+});
 
 // ===== Calendario =====
-let calDate = new Date();
-calDate.setDate(1);
-let selectedDate = null;
-
 function renderCalendar() {
   const year  = calDate.getFullYear();
   const month = calDate.getMonth();
@@ -272,18 +244,16 @@ function renderCalendar() {
                       'July','August','September','October','November','December'];
   document.getElementById('calMonthYear').textContent = monthNames[month] + ' ' + year;
 
-  const today    = new Date();
-  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
-  // Convert so Mon=0
+  const today       = new Date();
+  const firstDay    = new Date(year, month, 1).getDay();
   const startOffset = (firstDay === 0) ? 6 : firstDay - 1;
-  const daysInMonth  = new Date(year, month + 1, 0).getDate();
-  const daysInPrev   = new Date(year, month, 0).getDate();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev  = new Date(year, month, 0).getDate();
 
   const tbody = document.getElementById('calBody');
   tbody.innerHTML = '';
 
-  let day = 1;
-  let nextDay = 1;
+  let day = 1, nextDay = 1;
   let prevDay = daysInPrev - startOffset + 1;
 
   for (let row = 0; row < 6; row++) {
@@ -294,31 +264,36 @@ function renderCalendar() {
       const cell = row * 7 + col;
 
       if (cell < startOffset) {
-        // días del mes anterior
         span.textContent = prevDay++;
         span.classList.add('other-month');
       } else if (day > daysInMonth) {
-        // días del mes siguiente
         span.textContent = nextDay++;
         span.classList.add('other-month');
       } else {
         span.textContent = day;
-        const d = day;
+        const d        = day;
+        const thisDate = new Date(year, month, d);
+        const isFuture = thisDate > today;
+
         if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d) {
           span.classList.add('today');
         }
         if (selectedDate &&
             selectedDate.getFullYear() === year &&
-            selectedDate.getMonth() === month &&
-            selectedDate.getDate() === d) {
+            selectedDate.getMonth()    === month &&
+            selectedDate.getDate()     === d) {
           span.classList.add('selected');
         }
-        span.addEventListener('click', () => {
-          selectedDate = new Date(year, month, d);
-          const iso = selectedDate.toISOString().split('T')[0];
-          document.getElementById('fechaIngreso').value = iso;
-          renderCalendar();
-        });
+
+        if (isFuture) {
+          span.classList.add('disabled-date');
+        } else {
+          span.addEventListener('click', () => {
+            selectedDate = new Date(year, month, d);
+            document.getElementById('fechaIngreso').value = selectedDate.toISOString().split('T')[0];
+            renderCalendar();
+          });
+        }
         day++;
       }
       td.appendChild(span);
@@ -359,8 +334,15 @@ document.getElementById('btnGuardar').addEventListener('click', () => {
     }
   }
 
-  // TODO: POST/PUT /api/ordenes
   if (modoEditar) {
+    const cedulaEdit      = document.getElementById('editBuscarCliente').value.trim();
+    const tecnicoEdit     = document.getElementById('editBuscarTecnico').value.trim();
+    const descripcionEdit = document.getElementById('editDescripcion').value.trim();
+
+    if (!cedulaEdit)      { alert('Ingrese la cédula del cliente.'); return; }
+    if (!tecnicoEdit)     { alert('Seleccione un técnico.'); return; }
+    if (!descripcionEdit) { alert('Ingrese la descripción del fallo.'); return; }
+
     const numOrden = sessionStorage.getItem('ordenSeleccionada') || 'F-002';
     document.getElementById('modalNumOrdenEditar').textContent = numOrden;
     document.getElementById('modalExitoEditar').classList.add('active');
@@ -375,15 +357,12 @@ document.getElementById('btnCancelar').addEventListener('click', () => {
   window.location.href = 'dashboard.html';
 });
 
-// Cerrar modal éxito nueva orden → volver al dashboard
 document.getElementById('btnAceptarExito')?.addEventListener('click', () => {
   window.location.href = 'dashboard.html';
 });
 document.getElementById('btnCerrarExito')?.addEventListener('click', () => {
   window.location.href = 'dashboard.html';
 });
-
-// Cerrar modal éxito editar → volver al dashboard
 document.getElementById('btnAceptarExitoEditar')?.addEventListener('click', () => {
   window.location.href = 'dashboard.html';
 });
@@ -400,7 +379,14 @@ document.getElementById('btnLogout').addEventListener('click', () => {
   window.location.href = 'index.html';
 });
 
-// ===== Inicializar calendario en modo nueva orden =====
-if (!modoEditar) {
-  renderCalendar();
-}
+// ===== Inicializar =====
+if (!modoEditar) renderCalendar();
+
+const BLOCKED_KEYS = ['-', '+', 'e', 'E', '.', ','];
+['horasLaboratorio', 'editHoras'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('keydown', e => {
+    if (BLOCKED_KEYS.includes(e.key)) e.preventDefault();
+  });
+});

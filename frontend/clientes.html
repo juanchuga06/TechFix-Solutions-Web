@@ -6,42 +6,16 @@
   <title>TechFix Solutions – Clientes</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    body { display: flex; min-height: 100vh; background: #f5f5f5; }
-
-    .sidebar {
-      width: 200px; min-height: 100vh; background: #fff;
-      border-right: 1px solid #e0e0e0; display: flex;
-      flex-direction: column; flex-shrink: 0;
-    }
-    .sidebar-sede { background: #111; color: #fff; font-weight: 700; font-size: 15px; padding: 16px 18px; }
-    .sidebar-nav { flex: 1; padding: 10px 0; list-style: none; }
-    .sidebar-nav li a {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 18px; color: #333; text-decoration: none;
-      font-size: 14px; border-radius: 4px; margin: 2px 8px; transition: background 0.15s;
-    }
-    .sidebar-nav li a:hover { background: #f0f0f0; }
-    .sidebar-nav li a.active { background: #111; color: #fff; }
-    .sidebar-user {
-      border-top: 1px solid #e0e0e0; padding: 14px 18px;
-      display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.15s;
-    }
-    .sidebar-user:hover { background: #f5f5f5; }
-    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #ddd; border: 1px solid #bbb; flex-shrink: 0; }
-    .user-info .name { font-size: 13px; font-weight: 600; color: #111; }
-    .user-info .role { font-size: 12px; color: #888; }
-    .logout-panel { display: none; background: #f9f9f9; border-top: 1px solid #e0e0e0; padding: 12px 18px; font-size: 13px; }
-    .logout-panel.open { display: block; }
-    .logout-panel-title { font-weight: 600; color: #111; margin-bottom: 4px; }
-    .logout-panel-desc { color: #666; font-size: 12px; margin-bottom: 10px; line-height: 1.4; }
+    body { display: flex; min-height: 100vh; background: var(--surface); }
 
     /* ===== MAIN ===== */
     .main-content { flex: 1; padding: 28px 32px; max-width: 960px; }
-    .page-title { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--primary-navy); margin-bottom: 20px; }
 
     .section-tag {
-      display: inline-block; border: 1px solid #999; border-radius: 20px;
-      padding: 3px 14px; font-size: 12px; font-weight: 600; color: #333;
+      display: inline-block; border: 1px solid rgba(0,212,255,0.40); border-radius: 20px;
+      padding: 3px 14px; font-size: 12px; font-weight: 600;
+      color: var(--accent-cyan-deep); background: rgba(0,212,255,0.06);
       margin-bottom: 18px; letter-spacing: 0.3px;
     }
 
@@ -49,73 +23,58 @@
 
     /* ===== FORM REGISTRO ===== */
     .client-form { max-width: 700px; }
-
-    .client-form .field-row {
-      display: flex; align-items: center; gap: 16px; margin-bottom: 12px;
-    }
-    .client-form .field-row label {
-      min-width: 170px; font-size: 14px; font-weight: 500; color: #222; text-align: right;
-    }
+    .client-form .field-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+    .client-form .field-row label { min-width: 170px; font-size: 14px; font-weight: 500; color: #222; text-align: right; }
     .client-form .field-row input {
-      flex: 1; padding: 8px 12px; border: 1px solid #ccc;
-      border-radius: 4px; font-size: 14px; outline: none; background: #fff;
+      flex: 1; padding: 8px 12px; border: 1px solid var(--border-subtle);
+      border-radius: 6px; font-size: 14px; outline: none; background: #fff; transition: border-color 0.2s;
     }
-    .client-form .field-row input:focus { border-color: #333; }
-
-    .form-actions {
-      display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;
-    }
+    .client-form .field-row input:focus { border-color: var(--accent-cyan); }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 
     /* ===== DIRECTORIO ===== */
-    .dir-toolbar {
-      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
-    }
+    .dir-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
     .dir-toolbar label { font-size: 14px; font-weight: 500; color: #222; }
     .dir-toolbar .search-wrap {
-      display: flex; align-items: center; border: 1px solid #ccc;
-      border-radius: 4px; background: #fff; padding: 6px 12px; gap: 8px; flex: 1; max-width: 480px;
+      display: flex; align-items: center; border: 1px solid var(--border-subtle);
+      border-radius: 6px; background: #fff; padding: 6px 12px; gap: 8px;
+      flex: 1; max-width: 480px; box-shadow: var(--shadow-sm);
     }
-    .dir-toolbar .search-wrap input {
-      border: none; outline: none; font-size: 13px; color: #555; width: 100%; background: transparent;
-    }
+    .dir-toolbar .search-wrap input { border: none; outline: none; font-size: 13px; color: #555; width: 100%; background: transparent; }
 
     /* ===== TABLE ===== */
-    .dir-table-wrap {
-      border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;
-    }
+    .dir-table-wrap { border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm); }
     .dir-table-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .dir-table-wrap thead th {
-      background: #111; color: #fff; padding: 10px 14px; text-align: left; font-weight: 500;
-    }
-    .dir-table-wrap tbody tr { border-bottom: 1px solid #eee; }
+    .dir-table-wrap thead th { background: var(--grad-thead); color: #fff; padding: 10px 14px; text-align: left; font-weight: 500; }
+    .dir-table-wrap tbody tr { border-bottom: 1px solid #EEEFF1; }
     .dir-table-wrap tbody tr:last-child { border-bottom: none; }
-    .dir-table-wrap tbody tr:hover { background: #f9f9f9; }
-    .dir-table-wrap tbody td { padding: 10px 14px; color: #444; font-size: 13px; }
+    .dir-table-wrap tbody tr:hover { background: rgba(0,212,255,0.04); }
+    .dir-table-wrap tbody td { padding: 10px 14px; color: #374151; font-size: 13px; }
 
     /* ===== PAGINACIÓN ===== */
-    .pagination {
-      display: flex; align-items: center; justify-content: center;
-      gap: 6px; margin-top: 20px;
-    }
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 20px; }
     .pagination button {
-      padding: 6px 14px; border: none; border-radius: 4px;
-      font-size: 13px; cursor: pointer; background: #111; color: #fff; transition: background 0.2s;
+      padding: 6px 14px; border: none; border-radius: 6px; font-size: 13px;
+      cursor: pointer; background: var(--grad-btn-primary); color: var(--primary-navy);
+      font-weight: 600; transition: opacity 0.2s;
     }
-    .pagination button:hover { background: #333; }
-    .pagination button:disabled { background: #ccc; cursor: default; }
+    .pagination button:hover { opacity: 0.88; }
+    .pagination button:disabled { background: #C4C9D4; color: #fff; cursor: default; }
     .pagination .page-btn {
       width: 32px; height: 32px; padding: 0; border-radius: 4px;
-      background: #fff; color: #333; border: 1px solid #ccc; font-size: 13px;
+      background: #fff; color: #333; border: 1px solid var(--border-subtle); font-size: 13px; font-weight: 400;
     }
-    .pagination .page-btn.active { background: #111; color: #fff; border-color: #111; }
-    .pagination .page-btn:hover:not(.active) { background: #f0f0f0; }
+    .pagination .page-btn.active { background: var(--grad-btn-primary); color: var(--primary-navy); border-color: var(--accent-cyan); font-weight: 700; }
+    .pagination .page-btn:hover:not(.active) { background: rgba(0,212,255,0.08); }
   </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
-  <div class="sidebar-sede" id="sedeLabel">Sede: NORTE</div>
+  <div class="sidebar-sede" id="sedeLabel">
+    <img src="img/logo.svg" alt="" width="22" height="22" style="vertical-align:middle; margin-right:8px;">
+    <span id="sedeLabelText">Sede: NORTE</span>
+  </div>
   <ul class="sidebar-nav">
     <li><a href="dashboard.html"><span>🏠</span> Home</a></li>
     <li><a href="ordenes.html"><span>📋</span> Ordenes de servicio</a></li>
@@ -147,7 +106,7 @@
     <div class="client-form" id="clienteForm">
       <div class="field-row">
         <label>Cédula Cliente:</label>
-        <input type="text" id="fCedula" placeholder="Type here..." maxlength="13" />
+        <input type="text" id="fCedula" placeholder="Type here..." maxlength="10" inputmode="numeric" />
       </div>
       <div class="field-row">
         <label>Nombre:</label>
@@ -179,7 +138,7 @@
       <label>Buscar Cliente:</label>
       <div class="search-wrap">
         <span style="color:#999; font-size:13px;">🔍</span>
-        <input type="text" id="buscarClienteDir" placeholder="Search..." autocomplete="off" />
+        <input type="text" id="buscarClienteDir" placeholder="Buscar por cédula..." autocomplete="off" />
       </div>
     </div>
 
@@ -301,7 +260,7 @@
     <p style="font-size:12px; color:#888; margin-bottom:24px;">Esta acción es irreversible.</p>
     <div style="display:flex; justify-content:center; gap:16px;">
       <button class="btn btn-secondary" id="btnCancelarElimCliente">Cancelar</button>
-      <button class="btn btn-primary" id="btnConfirmarElimCliente">Eliminar</button>
+      <button class="btn btn-danger" id="btnConfirmarElimCliente">Eliminar</button>
     </div>
   </div>
 </div>

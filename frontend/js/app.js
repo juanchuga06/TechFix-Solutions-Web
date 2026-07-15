@@ -1,6 +1,11 @@
 // ===== Cierre de sesión =====
-document.getElementById('sidebarUserBtn')?.addEventListener('click', () => {
+document.getElementById('sidebarUserBtn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
   document.getElementById('logoutPanel').classList.toggle('open');
+});
+
+document.getElementById('logoutPanel')?.addEventListener('click', (e) => {
+  e.stopPropagation();
 });
 
 document.getElementById('btnLogout')?.addEventListener('click', () => {
@@ -26,12 +31,12 @@ document.querySelectorAll('.col-sur').forEach(el => {
 
 // ===== Datos mock (se reemplazarán con fetch al API) =====
 const ordenesMock = [
-  { folio: 'F-001', fecha: '2024-06-01', descripcion: 'Pantalla rota',      estado: 'Pendiente',  tecnico: 'Carlos R.', cliente: 'Ana López',     encriptacion: 'AES-256',  protocolo: 'TLS 1.3', horas: 4 },
-  { folio: 'F-002', fecha: '2024-06-03', descripcion: 'No enciende',        estado: 'En proceso', tecnico: 'Luis M.',   cliente: 'Pedro Díaz',    encriptacion: 'RSA-2048', protocolo: 'SSH',     horas: 6 },
-  { folio: 'F-003', fecha: '2024-06-05', descripcion: 'Batería defectuosa', estado: 'Finalizada', tecnico: 'María S.',  cliente: 'Juan García',   encriptacion: 'AES-128',  protocolo: 'TLS 1.2', horas: 2 },
-  { folio: 'F-004', fecha: '2024-06-07', descripcion: 'Teclado bloqueado',  estado: 'Pendiente',  tecnico: 'Carlos R.', cliente: 'Sofía Torres',  encriptacion: 'AES-256',  protocolo: 'TLS 1.3', horas: 3 },
-  { folio: 'F-005', fecha: '2024-06-08', descripcion: 'Puerto USB dañado',  estado: 'En proceso', tecnico: 'Luis M.',   cliente: 'Marta Ruiz',    encriptacion: 'RSA-2048', protocolo: 'SSH',     horas: 5 },
-  { folio: 'F-006', fecha: '2024-06-10', descripcion: 'Sistema operativo',  estado: 'Finalizada', tecnico: 'María S.',  cliente: 'Roberto Vega',  encriptacion: 'AES-128',  protocolo: 'TLS 1.2', horas: 8 },
+  { folio: 'F-001', fecha: '2024-06-01', descripcion: 'Pantalla rota',      estado: 'Pendiente',  tecnico: 'Carlos Ramírez',  cliente: 'Ana López',     encriptacion: 'AES-256',  protocolo: 'TLS 1.3', horas: 4 },
+  { folio: 'F-002', fecha: '2024-06-03', descripcion: 'No enciende',        estado: 'En proceso', tecnico: 'Luis Mendoza',    cliente: 'Pedro Díaz',    encriptacion: 'RSA-2048', protocolo: 'SSH',     horas: 6 },
+  { folio: 'F-003', fecha: '2024-06-05', descripcion: 'Batería defectuosa', estado: 'Finalizada', tecnico: 'María Suárez',    cliente: 'Juan García',   encriptacion: 'AES-128',  protocolo: 'TLS 1.2', horas: 2 },
+  { folio: 'F-004', fecha: '2024-06-07', descripcion: 'Teclado bloqueado',  estado: 'Pendiente',  tecnico: 'Carlos Ramírez',  cliente: 'Sofía Torres',  encriptacion: 'AES-256',  protocolo: 'TLS 1.3', horas: 3 },
+  { folio: 'F-005', fecha: '2024-06-08', descripcion: 'Puerto USB dañado',  estado: 'En proceso', tecnico: 'Luis Mendoza',    cliente: 'Marta Ruiz',    encriptacion: 'RSA-2048', protocolo: 'SSH',     horas: 5 },
+  { folio: 'F-006', fecha: '2024-06-10', descripcion: 'Sistema operativo',  estado: 'Finalizada', tecnico: 'María Suárez',    cliente: 'Roberto Vega',  encriptacion: 'AES-128',  protocolo: 'TLS 1.2', horas: 8 },
 ];
 
 // ===== Estado de selección =====
@@ -88,7 +93,7 @@ function renderTablaEstado(bodyId, data, estado) {
 }
 
 function badgeClass(estado) {
-  const map = { 'Pendiente': 'badge-pending', 'En proceso': 'badge-progress', 'Finalizada': 'badge-done', 'Cancelada': 'badge-cancelled' };
+  const map = { 'Pendiente': 'badge-pending', 'En proceso': 'badge-progress', 'Finalizada': 'badge-done' };
   return map[estado] || '';
 }
 
@@ -174,6 +179,13 @@ document.getElementById('btnActualizar')?.addEventListener('click', () => {
 });
 
 // ===== Inicializar =====
+// Limitar filtro de fecha a hoy como máximo
+const filtroFecha = document.getElementById('filtroFecha');
+if (filtroFecha) {
+  const hoy = new Date().toISOString().split('T')[0];
+  filtroFecha.setAttribute('max', hoy);
+}
+
 renderTodasOrdenes(ordenesMock);
 renderTablaEstado('bodyPendientes',  ordenesMock, 'Pendiente');
 renderTablaEstado('bodyEnProceso',   ordenesMock, 'En proceso');
