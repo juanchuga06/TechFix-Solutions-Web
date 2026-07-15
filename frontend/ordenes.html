@@ -292,12 +292,12 @@
   <div class="form-section">
     <div class="section-tag">3. ASIGNACIÓN DE REPUESTOS</div>
 
-    <div class="field-row">
+    <div class="field-row" style="align-items:center;">
       <label>Buscar Repuesto por Código:</label>
-      <div class="field-control">
-        <div class="autocomplete-wrap">
+      <div class="field-control" style="display:flex; gap:10px; align-items:center;">
+        <div class="autocomplete-wrap" style="flex:1;">
           <span class="autocomplete-icon">🔍</span>
-          <input type="text" id="buscarRepuesto" placeholder="Buscar por código..." autocomplete="off" />
+          <input type="text" id="buscarRepuesto" placeholder="Busque repuesto..." autocomplete="off" />
           <ul class="autocomplete-list" id="listaRepuestos"></ul>
         </div>
       </div>
@@ -308,12 +308,14 @@
         <thead>
           <tr>
             <th>Código</th>
+            <th>Nombre del Repuesto</th>
             <th>Unidades</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="bodyRepuestos">
           <tr id="emptyRepuestos">
-            <td colspan="3" style="text-align:center; color:#aaa; padding:16px;">
+            <td colspan="4" style="text-align:center; color:#aaa; padding:16px;">
               Sin repuestos agregados
             </td>
           </tr>
@@ -472,6 +474,47 @@
       </p>
       <div style="text-align:right;">
         <button class="btn btn-primary" id="btnAceptarExitoEditar">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAR ELIMINAR REPUESTO -->
+  <div class="modal-overlay" id="modalElimRepuesto">
+    <div class="modal" style="max-width:380px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #eee; padding-bottom:12px;">
+        <h3 class="modal-title" style="margin-bottom:0;">Eliminar Repuesto</h3>
+        <button id="btnCerrarElimRep" style="background:none;border:1px solid #ccc;width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+      </div>
+      <p style="font-size:14px; color:#333; text-align:center; margin:20px 0 8px;">
+        ¿Desea eliminar el repuesto <strong id="elimRepCodigo"></strong> de la orden?
+      </p>
+      <p style="font-size:12px; color:#888; text-align:center; margin-bottom:24px;">Esta acción es irreversible.</p>
+      <div style="display:flex; justify-content:flex-end; gap:12px;">
+        <button class="btn btn-secondary" id="btnCancelarElimRep">Cancelar</button>
+        <button class="btn btn-danger" id="btnConfirmarElimRep">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ACTUALIZAR CANTIDAD REPUESTO -->
+  <div class="modal-overlay" id="modalActualizarRep">
+    <div class="modal" style="max-width:360px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #eee; padding-bottom:12px;">
+        <h3 class="modal-title" style="margin-bottom:0;">Actualizar Unidades</h3>
+        <button id="btnCerrarActualizarRep" style="background:none;border:1px solid #ccc;width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+      </div>
+      <div style="font-size:13px; color:#555; margin-bottom:14px;">
+        Repuesto: <strong id="actualizarRepCodigo"></strong>
+      </div>
+      <div class="modal-field" style="margin-bottom:20px;">
+        <label style="display:block; font-size:13px; font-weight:600; color:#222; margin-bottom:4px;">Cantidad</label>
+        <input type="number" id="actualizarRepQty" min="1" step="1"
+          style="width:100%; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px; font-size:14px; outline:none;"
+          onpaste="return false" />
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:12px;">
+        <button class="btn btn-secondary" id="btnCancelarActualizarRep">Cancelar</button>
+        <button class="btn btn-primary" id="btnConfirmarActualizarRep">Actualizar</button>
       </div>
     </div>
   </div>

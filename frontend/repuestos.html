@@ -80,8 +80,9 @@
     <table>
       <thead>
         <tr>
-          <th>Código</th>
-          <th>Unidades</th>
+          <th>Código del Repuesto</th>
+          <th>Nombre del Repuesto</th>
+          <th>Precio Unitario</th>
         </tr>
       </thead>
       <tbody id="bodyRepuestos"></tbody>
@@ -103,12 +104,12 @@
       <button id="btnCerrarNuevo" style="background:none;border:1px solid #ccc;width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
     </div>
     <div class="modal-field">
-      <label>Código del repuesto</label>
-      <input type="text" id="nuevoCodigoRep" placeholder="Type here..." />
+      <label>Nombre del repuesto</label>
+      <input type="text" id="nuevoNombreRep" placeholder="Type here..." />
     </div>
     <div class="modal-field">
-      <label>Unidades</label>
-      <input type="number" id="nuevoUnidades" min="0" step="1" placeholder="Type here..." />
+      <label>Costo Unitario</label>
+      <input type="number" id="nuevoPrecioRep" min="0" step="0.01" placeholder="Type here..." />
     </div>
     <div style="display:flex; justify-content:flex-end; margin-top:8px;">
       <button class="btn btn-primary" id="btnAgregarRepuesto">Agregar</button>
@@ -143,11 +144,29 @@
       <input type="text" id="updCodigo" readonly />
     </div>
     <div class="modal-field">
-      <label>Cantidad</label>
-      <input type="number" id="updCantidad" min="1" step="1" placeholder="Type here..." />
+      <label>Nombre del repuesto</label>
+      <input type="text" id="updNombre" placeholder="Type here..." />
+    </div>
+    <div class="modal-field">
+      <label>Costo Unitario</label>
+      <input type="number" id="updPrecio" min="0" step="0.01" placeholder="Type here..." />
     </div>
     <div style="display:flex; justify-content:flex-end; margin-top:8px;">
       <button class="btn btn-primary" id="btnConfirmarActualizar">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÉXITO -->
+<div class="modal-overlay" id="modalExito">
+  <div class="modal" style="max-width:420px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #eee; padding-bottom:12px;">
+      <h3 class="modal-title" id="exitoTitulo" style="margin-bottom:0;"></h3>
+      <button id="btnCerrarExito" style="background:none;border:1px solid #ccc;width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+    </div>
+    <p id="exitoMensaje" style="font-size:14px; color:#333; text-align:center; margin:20px 0 24px;"></p>
+    <div style="display:flex; justify-content:flex-end;">
+      <button class="btn btn-primary" id="btnAceptarExito">Aceptar</button>
     </div>
   </div>
 </div>

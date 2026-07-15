@@ -27,11 +27,11 @@ const tecnicosMock = [
 ];
 
 const catalogoMock = [
-  { codigo: '001' },
-  { codigo: '002' },
-  { codigo: '003' },
-  { codigo: '004' },
-  { codigo: '005' },
+  { codigo: 'R-001', nombre: 'Pantalla LCD'      },
+  { codigo: 'R-002', nombre: 'Batería 4000mAh'   },
+  { codigo: 'R-003', nombre: 'Conector de carga' },
+  { codigo: 'R-004', nombre: 'Altavoz interno'   },
+  { codigo: 'R-005', nombre: 'Cámara trasera'    },
 ];
 
 // ===== Estado interno =====
@@ -44,50 +44,109 @@ let calDate    = new Date();
 let selectedDate = null;
 calDate.setDate(1);
 
+// ===== Estado modales repuestos =====
+let pendingElimCodigo = null;
+let pendingActualizarCodigo = null;
+
 // ===== Render repuestos =====
 function renderRepuestos() {
   const tbody = document.getElementById('bodyRepuestos');
   tbody.innerHTML = '';
 
   if (!repuestosAgregados.length) {
-    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#aaa;padding:16px;">Sin repuestos agregados</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:16px;">Sin repuestos agregados</td></tr>';
     return;
   }
 
-  repuestosAgregados.forEach((r, i) => {
-    const tr = document.createElement('tr');
+  repuestosAgregados.forEach((r) => {
+    const cat = catalogoMock.find(c => c.codigo === r.codigo);
+    const tr  = document.createElement('tr');
 
-    const tdCodigo = document.createElement('td');
+    const tdCodigo  = document.createElement('td');
     tdCodigo.textContent = r.codigo;
 
-    const tdQty = document.createElement('td');
-    tdQty.innerHTML =
-      '<div class="qty-control">' +
-        '<button data-i="' + i + '" data-action="dec">\u2212</button>' +
-        '<span>' + r.qty + '</span>' +
-        '<button data-i="' + i + '" data-action="inc">+</button>' +
-      '</div>';
+    const tdNombre  = document.createElement('td');
+    tdNombre.textContent = cat ? cat.nombre : '—';
+
+    const tdQty     = document.createElement('td');
+    tdQty.textContent = r.qty;
+
+    const tdAcciones = document.createElement('td');
+    tdAcciones.style.whiteSpace = 'nowrap';
+
+    const btnElim = document.createElement('button');
+    btnElim.textContent = 'Eliminar';
+    btnElim.className   = 'btn btn-danger';
+    btnElim.style.cssText = 'font-size:12px; padding:4px 10px; margin-right:6px;';
+    btnElim.addEventListener('click', () => openElimRepuesto(r.codigo));
+
+    const btnUpd = document.createElement('button');
+    btnUpd.textContent = 'Actualizar';
+    btnUpd.className   = 'btn btn-primary';
+    btnUpd.style.cssText = 'font-size:12px; padding:4px 10px;';
+    btnUpd.addEventListener('click', () => openActualizarRepuesto(r.codigo, r.qty));
+
+    tdAcciones.appendChild(btnElim);
+    tdAcciones.appendChild(btnUpd);
 
     tr.appendChild(tdCodigo);
+    tr.appendChild(tdNombre);
     tr.appendChild(tdQty);
+    tr.appendChild(tdAcciones);
     tbody.appendChild(tr);
   });
-
-  tbody.querySelectorAll('button[data-action]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const i      = parseInt(btn.dataset.i);
-      const action = btn.dataset.action;
-      if (action === 'inc') {
-        repuestosAgregados[i].qty++;
-      }
-      if (action === 'dec') {
-        repuestosAgregados[i].qty--;
-        if (repuestosAgregados[i].qty <= 0) repuestosAgregados.splice(i, 1);
-      }
-      renderRepuestos();
-    });
-  });
 }
+
+// ===== Eliminar repuesto (modal) =====
+function openElimRepuesto(codigo) {
+  pendingElimCodigo = codigo;
+  document.getElementById('elimRepCodigo').textContent = codigo;
+  document.getElementById('modalElimRepuesto').classList.add('active');
+}
+document.getElementById('btnCerrarElimRep').addEventListener('click', () => {
+  document.getElementById('modalElimRepuesto').classList.remove('active');
+});
+document.getElementById('btnCancelarElimRep').addEventListener('click', () => {
+  document.getElementById('modalElimRepuesto').classList.remove('active');
+});
+document.getElementById('btnConfirmarElimRep').addEventListener('click', () => {
+  repuestosAgregados = repuestosAgregados.filter(r => r.codigo !== pendingElimCodigo);
+  document.getElementById('modalElimRepuesto').classList.remove('active');
+  renderRepuestos();
+});
+
+// ===== Actualizar cantidad (modal) =====
+function openActualizarRepuesto(codigo, qty) {
+  pendingActualizarCodigo = codigo;
+  document.getElementById('actualizarRepCodigo').textContent = codigo;
+  document.getElementById('actualizarRepQty').value = qty;
+  document.getElementById('modalActualizarRep').classList.add('active');
+}
+document.getElementById('btnCerrarActualizarRep').addEventListener('click', () => {
+  document.getElementById('modalActualizarRep').classList.remove('active');
+});
+document.getElementById('btnCancelarActualizarRep').addEventListener('click', () => {
+  document.getElementById('modalActualizarRep').classList.remove('active');
+});
+document.getElementById('actualizarRepQty').addEventListener('keydown', e => {
+  if (['-', '+', 'e', 'E', '.', ','].includes(e.key)) e.preventDefault();
+});
+
+document.getElementById('btnConfirmarActualizarRep').addEventListener('click', () => {
+  const qty = parseInt(document.getElementById('actualizarRepQty').value);
+  if (isNaN(qty) || qty < 1) { alert('Ingrese una cantidad válida (mínimo 1).'); return; }
+  const rep = repuestosAgregados.find(r => r.codigo === pendingActualizarCodigo);
+  if (rep) rep.qty = qty;
+  document.getElementById('modalActualizarRep').classList.remove('active');
+  renderRepuestos();
+});
+
+// Cerrar modales rep al clic fuera
+['modalElimRepuesto', 'modalActualizarRep'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+});
 
 // ===== Modo editar: prellenar datos =====
 if (modoEditar) {
@@ -137,9 +196,9 @@ if (modoEditar) {
 
   // Repuestos prellenados
   repuestosAgregados = [
-    { codigo: '001', qty: 1 },
-    { codigo: '002', qty: 2 },
-    { codigo: '003', qty: 1 },
+    { codigo: 'R-001', qty: 1 },
+    { codigo: 'R-002', qty: 2 },
+    { codigo: 'R-003', qty: 1 },
   ];
   renderRepuestos();
 
@@ -229,7 +288,7 @@ setupAutocomplete({
     if (existente) {
       existente.qty++;
     } else {
-      repuestosAgregados.push({ codigo: r.codigo, qty: 0 });
+      repuestosAgregados.push({ codigo: r.codigo, qty: 1 });
     }
     renderRepuestos();
   },
