@@ -1,54 +1,72 @@
-// ===== Sesión =====
-const params  = new URLSearchParams(window.location.search);
-const sede    = sessionStorage.getItem('sede') || params.get('sede') || 'norte';
-const usuario = sessionStorage.getItem('usuario') || 'Usuario';
-const esSur   = sede === 'sur';
+// =====================================================================
+// ordenes.js — Alta y edición de órdenes de servicio, vía API
+// (sesión y menú lateral los maneja ui.js)
+// =====================================================================
 
-document.getElementById('sedeLabel').textContent       = 'Sede: ' + sede.toUpperCase();
-document.getElementById('sidebarUserName').textContent = usuario;
-
-if (esSur) {
-  document.getElementById('secLaboratorio').style.display = 'block';
-}
-
+const params     = new URLSearchParams(window.location.search);
+const nodo       = getNodo();
+const sur        = esSur();
 const modoEditar = params.get('modo') === 'editar';
 
-// ===== Datos mock =====
-const clientesMock = [
-  { cedula: '1750094123', nombre: 'Karen Anahí Mosquera Tómala', telefono: '0990960044' },
-  { cedula: '1715624352', nombre: 'Pedro Díaz Loor',              telefono: '0981234567' },
-  { cedula: '0923456789', nombre: 'Sofía Torres Muñoz',           telefono: '0976543210' },
-];
+if (sur) {
+  const secLab = document.getElementById('secLaboratorio');
+  if (secLab) secLab.style.display = 'block';
+}
 
-const tecnicosMock = [
-  { id: 'T01', nombre: 'Carlos Ramírez' },
-  { id: 'T02', nombre: 'Luis Mendoza'   },
-  { id: 'T03', nombre: 'María Suárez'   },
-];
+// ===== Catálogos (cargados desde el API) =====
+let clientes  = [];   // { cedula, nombre, telefono, correo }
+let tecnicos  = [];   // { codigo, cedula, nombre, apellido, especialidad, full }
+let catalogo  = [];   // { codigo, nombre, precio }
 
-const catalogoMock = [
-  { codigo: 'R-001', nombre: 'Pantalla LCD'      },
-  { codigo: 'R-002', nombre: 'Batería 4000mAh'   },
-  { codigo: 'R-003', nombre: 'Conector de carga' },
-  { codigo: 'R-004', nombre: 'Altavoz interno'   },
-  { codigo: 'R-005', nombre: 'Cámara trasera'    },
-];
-
-// ===== Estado interno =====
-let clienteSeleccionado = null;
-let tecnicoSeleccionado = null;
-let repuestosAgregados  = []; // { codigo, qty }
+// ===== Selección / estado interno =====
+let clienteSeleccionado = null;   // { cedula, nombre, telefono }
+let tecnicoSeleccionado = null;   // { codigo, full }
+let repuestosAgregados  = [];     // { codigo, nombre, qty }
+let repuestosOriginales = [];     // snapshot para diff en edición
 
 // ===== Calendario =====
-let calDate    = new Date();
+let calDate = new Date();
 let selectedDate = null;
 calDate.setDate(1);
 
-// ===== Estado modales repuestos =====
+// ===== Modales repuestos =====
 let pendingElimCodigo = null;
 let pendingActualizarCodigo = null;
 
-// ===== Render repuestos =====
+// =====================================================================
+// Normalizadores
+// =====================================================================
+function normCliente(c) {
+  return { cedula: c.cedula_cliente, nombre: c.nombre_completo, telefono: c.telefono_cliente, correo: c.correo_cliente };
+}
+function normTecnico(t) {
+  return {
+    codigo: t.codigo_empleado, cedula: t.cedula_tecnico,
+    nombre: t.nombre_tecnico, apellido: t.apellido_tecnico,
+    especialidad: t.especialidad_tecnico,
+    full: (t.nombre_tecnico + ' ' + t.apellido_tecnico).trim(),
+  };
+}
+function normRepuesto(r) {
+  return { codigo: r.codigo_repuesto, nombre: r.nombre_pieza, precio: r.costo_unitario };
+}
+
+// =====================================================================
+// diffRepuestos — separa qué actualizar / agregar / quitar
+// =====================================================================
+function diffRepuestos(original, current) {
+  const origCod = new Set(original.map(r => r.codigo));
+  const curCod  = new Set(current.map(r => r.codigo));
+  return {
+    toUpdate: current.filter(r => origCod.has(r.codigo)),
+    toAdd:    current.filter(r => !origCod.has(r.codigo)),
+    toRemove: original.filter(r => !curCod.has(r.codigo)),
+  };
+}
+
+// =====================================================================
+// Render tabla de repuestos
+// =====================================================================
 function renderRepuestos() {
   const tbody = document.getElementById('bodyRepuestos');
   tbody.innerHTML = '';
@@ -59,16 +77,13 @@ function renderRepuestos() {
   }
 
   repuestosAgregados.forEach((r) => {
-    const cat = catalogoMock.find(c => c.codigo === r.codigo);
-    const tr  = document.createElement('tr');
+    const tr = document.createElement('tr');
 
-    const tdCodigo  = document.createElement('td');
+    const tdCodigo = document.createElement('td');
     tdCodigo.textContent = r.codigo;
-
-    const tdNombre  = document.createElement('td');
-    tdNombre.textContent = cat ? cat.nombre : '—';
-
-    const tdQty     = document.createElement('td');
+    const tdNombre = document.createElement('td');
+    tdNombre.textContent = r.nombre || '—';
+    const tdQty = document.createElement('td');
     tdQty.textContent = r.qty;
 
     const tdAcciones = document.createElement('td');
@@ -76,13 +91,13 @@ function renderRepuestos() {
 
     const btnElim = document.createElement('button');
     btnElim.textContent = 'Eliminar';
-    btnElim.className   = 'btn btn-danger';
+    btnElim.className = 'btn btn-danger';
     btnElim.style.cssText = 'font-size:12px; padding:4px 10px; margin-right:6px;';
     btnElim.addEventListener('click', () => openElimRepuesto(r.codigo));
 
     const btnUpd = document.createElement('button');
     btnUpd.textContent = 'Actualizar';
-    btnUpd.className   = 'btn btn-primary';
+    btnUpd.className = 'btn btn-primary';
     btnUpd.style.cssText = 'font-size:12px; padding:4px 10px;';
     btnUpd.addEventListener('click', () => openActualizarRepuesto(r.codigo, r.qty));
 
@@ -131,7 +146,6 @@ document.getElementById('btnCancelarActualizarRep').addEventListener('click', ()
 document.getElementById('actualizarRepQty').addEventListener('keydown', e => {
   if (['-', '+', 'e', 'E', '.', ','].includes(e.key)) e.preventDefault();
 });
-
 document.getElementById('btnConfirmarActualizarRep').addEventListener('click', () => {
   const qty = parseInt(document.getElementById('actualizarRepQty').value);
   if (isNaN(qty) || qty < 1) { alert('Ingrese una cantidad válida (mínimo 1).'); return; }
@@ -141,96 +155,33 @@ document.getElementById('btnConfirmarActualizarRep').addEventListener('click', (
   renderRepuestos();
 });
 
-// Cerrar modales rep al clic fuera
 ['modalElimRepuesto', 'modalActualizarRep'].forEach(id => {
-  document.getElementById(id).addEventListener('click', function(e) {
+  document.getElementById(id).addEventListener('click', function (e) {
     if (e.target === this) this.classList.remove('active');
   });
 });
 
-// ===== Modo editar: prellenar datos =====
-if (modoEditar) {
-  document.getElementById('pageTitle').textContent  = 'Modificar orden de servicio';
-  document.getElementById('btnGuardar').textContent = 'Guardar Cambios';
-
-  document.getElementById('sec1Nueva').style.display  = 'none';
-  document.getElementById('sec1Editar').style.display = 'block';
-  document.getElementById('sec2Nueva').style.display  = 'none';
-  document.getElementById('sec2Editar').style.display = 'block';
-
-  document.getElementById('sec4Editar').style.display = 'block';
-  document.getElementById('calWrapper').style.display  = 'none';
-
-  if (esSur) {
-    document.getElementById('sec4Tag').textContent      = '';
-    document.getElementById('sec4Editar').style.display = 'none';
-  }
-
-  const folio = sessionStorage.getItem('ordenSeleccionada') || 'F-002';
-  // TODO: fetch('/api/ordenes/' + folio)
-  const ordenEditar = {
-    cedula: '1715624352', nombre: 'Karen Anahí Mosquera Tómala', telefono: '0990960044',
-    tecnico: 'Luis Mendoza', estado: 'En proceso', descripcion: 'Limpieza y cambio de pasta térmica',
-    fecha: '2026-05-25',
-  };
-
-  document.getElementById('editBuscarCliente').value = ordenEditar.cedula;
-  document.getElementById('dispNombre').textContent   = ordenEditar.nombre;
-  document.getElementById('dispTelefono').textContent = ordenEditar.telefono;
-  clienteSeleccionado = { cedula: ordenEditar.cedula, nombre: ordenEditar.nombre, telefono: ordenEditar.telefono };
-
-  document.getElementById('editBuscarTecnico').value = ordenEditar.tecnico;
-  tecnicoSeleccionado = tecnicosMock.find(t => t.nombre === ordenEditar.tecnico) || { id: '', nombre: ordenEditar.tecnico };
-
-  const editEstado = document.getElementById('editEstado');
-  if (editEstado) editEstado.value = ordenEditar.estado;
-  document.getElementById('editDescripcion').value = ordenEditar.descripcion;
-
-  document.getElementById('dispFecha').textContent    = ordenEditar.fecha;
-  document.getElementById('dispNumOrden').textContent = folio;
-  document.getElementById('fechaIngreso').value       = ordenEditar.fecha;
-
-  const [y, m] = ordenEditar.fecha.split('-').map(Number);
-  calDate      = new Date(y, m - 1, 1);
-  selectedDate = new Date(y, m - 1, parseInt(ordenEditar.fecha.split('-')[2]));
-
-  // Repuestos prellenados
-  repuestosAgregados = [
-    { codigo: 'R-001', qty: 1 },
-    { codigo: 'R-002', qty: 2 },
-    { codigo: 'R-003', qty: 1 },
-  ];
-  renderRepuestos();
-
-  if (esSur) {
-    const labMock = { encriptacion: 'AES-256', protocolo: 'TLS 1.3', horas: 4 };
-    document.getElementById('sec5Tag').textContent      = '4. LABORATORIO DE RECUPERACIÓN';
-    document.getElementById('sec5Editar').style.display = 'block';
-    document.getElementById('sec5Nueva').style.display  = 'none';
-    document.getElementById('editEncriptacion').value   = labMock.encriptacion;
-    document.getElementById('editProtocolo').value      = labMock.protocolo;
-    document.getElementById('editHoras').value          = labMock.horas;
-  }
-}
-
-// ===== Helper: autocomplete genérico =====
-function setupAutocomplete({ inputId, listId, data, labelFn, onSelect }) {
+// =====================================================================
+// Autocomplete genérico
+// =====================================================================
+function setupAutocomplete({ inputId, listId, getData, itemLabel, inputValue, matchFn, onSelect }) {
   const input = document.getElementById(inputId);
   const list  = document.getElementById(listId);
+  if (!input || !list) return;
 
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     list.innerHTML = '';
     if (!q) { list.classList.remove('open'); return; }
 
-    const matches = data.filter(d => labelFn(d).toLowerCase().includes(q));
+    const matches = getData().filter(d => matchFn(d, q));
     if (!matches.length) { list.classList.remove('open'); return; }
 
-    matches.forEach(d => {
+    matches.slice(0, 25).forEach(d => {
       const li = document.createElement('li');
-      li.textContent = labelFn(d);
+      li.textContent = itemLabel(d);
       li.addEventListener('click', () => {
-        input.value = labelFn(d);
+        input.value = inputValue(d);
         list.classList.remove('open');
         onSelect(d);
       });
@@ -240,61 +191,161 @@ function setupAutocomplete({ inputId, listId, data, labelFn, onSelect }) {
   });
 
   document.addEventListener('click', e => {
-    if (!input.contains(e.target) && !list.contains(e.target)) {
-      list.classList.remove('open');
-    }
+    if (!input.contains(e.target) && !list.contains(e.target)) list.classList.remove('open');
   });
 }
 
-// ===== Autocompletes =====
-setupAutocomplete({
-  inputId: 'buscarCliente', listId: 'listaClientes', data: clientesMock,
-  labelFn: c => c.cedula,
-  onSelect: c => {
-    clienteSeleccionado = c;
-    document.getElementById('clienteNombre').textContent   = c.nombre;
-    document.getElementById('clienteTelefono').textContent = c.telefono;
-  },
-});
+function configurarAutocompletes() {
+  // Cliente — se muestra toda la info; solo se usa la cédula en SQL.
+  const clienteLabel = c => `${c.cedula} — ${c.nombre} — ${c.telefono || ''}`;
+  const clienteMatch = (c, q) =>
+    c.cedula.toLowerCase().includes(q) || (c.nombre || '').toLowerCase().includes(q);
 
-setupAutocomplete({
-  inputId: 'buscarTecnico', listId: 'listaTecnicos', data: tecnicosMock,
-  labelFn: t => t.nombre,
-  onSelect: t => { tecnicoSeleccionado = t; },
-});
+  setupAutocomplete({
+    inputId: 'buscarCliente', listId: 'listaClientes',
+    getData: () => clientes, itemLabel: clienteLabel, inputValue: c => c.cedula, matchFn: clienteMatch,
+    onSelect: c => {
+      clienteSeleccionado = c;
+      document.getElementById('clienteNombre').textContent   = c.nombre;
+      document.getElementById('clienteTelefono').textContent = c.telefono || '—';
+    },
+  });
+  setupAutocomplete({
+    inputId: 'editBuscarCliente', listId: 'editListaClientes',
+    getData: () => clientes, itemLabel: clienteLabel, inputValue: c => c.cedula, matchFn: clienteMatch,
+    onSelect: c => {
+      clienteSeleccionado = c;
+      document.getElementById('dispNombre').textContent   = c.nombre;
+      document.getElementById('dispTelefono').textContent = c.telefono || '—';
+    },
+  });
 
-setupAutocomplete({
-  inputId: 'editBuscarCliente', listId: 'editListaClientes', data: clientesMock,
-  labelFn: c => c.cedula,
-  onSelect: c => {
-    clienteSeleccionado = c;
-    document.getElementById('dispNombre').textContent   = c.nombre;
-    document.getElementById('dispTelefono').textContent = c.telefono;
-  },
-});
+  // Técnico — se busca por código; se usa codigo_empleado en SQL.
+  const tecnicoLabel = t => `${t.codigo} — ${t.full}`;
+  const tecnicoMatch = (t, q) =>
+    String(t.codigo).includes(q) || t.full.toLowerCase().includes(q);
 
-setupAutocomplete({
-  inputId: 'editBuscarTecnico', listId: 'editListaTecnicos', data: tecnicosMock,
-  labelFn: t => t.nombre,
-  onSelect: t => { tecnicoSeleccionado = t; },
-});
+  setupAutocomplete({
+    inputId: 'buscarTecnico', listId: 'listaTecnicos',
+    getData: () => tecnicos, itemLabel: tecnicoLabel, inputValue: t => String(t.codigo), matchFn: tecnicoMatch,
+    onSelect: t => { tecnicoSeleccionado = t; },
+  });
+  setupAutocomplete({
+    inputId: 'editBuscarTecnico', listId: 'editListaTecnicos',
+    getData: () => tecnicos, itemLabel: tecnicoLabel, inputValue: t => String(t.codigo), matchFn: tecnicoMatch,
+    onSelect: t => { tecnicoSeleccionado = t; },
+  });
 
-setupAutocomplete({
-  inputId: 'buscarRepuesto', listId: 'listaRepuestos', data: catalogoMock,
-  labelFn: r => r.codigo,
-  onSelect: r => {
-    document.getElementById('buscarRepuesto').value = '';
-    const existente = repuestosAgregados.find(x => x.codigo === r.codigo);
-    if (existente) {
-      existente.qty++;
-    } else {
-      repuestosAgregados.push({ codigo: r.codigo, qty: 1 });
-    }
+  // Repuesto — se busca por código y se agrega a la tabla.
+  setupAutocomplete({
+    inputId: 'buscarRepuesto', listId: 'listaRepuestos',
+    getData: () => catalogo,
+    itemLabel: r => `${r.codigo} — ${r.nombre}`,
+    inputValue: () => '',
+    matchFn: (r, q) => String(r.codigo).includes(q) || (r.nombre || '').toLowerCase().includes(q),
+    onSelect: r => {
+      document.getElementById('buscarRepuesto').value = '';
+      const existente = repuestosAgregados.find(x => x.codigo === r.codigo);
+      if (existente) existente.qty++;
+      else repuestosAgregados.push({ codigo: r.codigo, nombre: r.nombre, qty: 1 });
+      renderRepuestos();
+    },
+  });
+}
+
+// =====================================================================
+// Carga inicial de catálogos + (si aplica) prellenado de edición
+// =====================================================================
+async function init() {
+  // Cada catálogo se carga de forma independiente: si uno falla (p. ej.
+  // técnicos, cuya vista consulta el nodo remoto), los demás siguen
+  // funcionando, para que el buscador de clientes no quede vacío.
+  const [rc, rt, rr] = await Promise.allSettled([
+    clientesApi.list(),
+    tecnicosApi.list(nodo),
+    repuestosApi.list(),
+  ]);
+
+  if (rc.status === 'fulfilled') clientes = (rc.value.clientes || []).map(normCliente);
+  if (rt.status === 'fulfilled') tecnicos = (rt.value.tecnicos || []).map(normTecnico);
+  const repuestosOk = rr.status === 'fulfilled';
+  if (repuestosOk) catalogo = (rr.value.repuestos || []).map(normRepuesto);
+
+  configurarAutocompletes();
+
+  if (modoEditar) {
+    await prellenarEdicion();
+  } else {
+    renderCalendar();
+    if (repuestosOk) renderRepuestos();
+    else renderTablaMensaje('bodyRepuestos', 4, mensajeDesconexion('Repuestos'));
+  }
+}
+
+async function prellenarEdicion() {
+  document.getElementById('pageTitle').textContent  = 'Modificar orden de servicio';
+  document.getElementById('btnGuardar').textContent = 'Guardar Cambios';
+
+  document.getElementById('sec1Nueva').style.display  = 'none';
+  document.getElementById('sec1Editar').style.display = 'block';
+  document.getElementById('sec2Nueva').style.display  = 'none';
+  document.getElementById('sec2Editar').style.display = 'block';
+  document.getElementById('sec4Editar').style.display = 'block';
+  document.getElementById('calWrapper').style.display = 'none';
+
+  const folio = sessionStorage.getItem('ordenSeleccionada');
+  let orden = {};
+  try { orden = JSON.parse(sessionStorage.getItem('ordenEditar') || '{}'); } catch (_) {}
+
+  // Cliente (solo visualización; el SP de actualización no cambia el cliente)
+  document.getElementById('dispNombre').textContent   = orden.cliente || '—';
+  document.getElementById('dispTelefono').textContent = '—';
+  const cli = clientes.find(c => c.nombre === orden.cliente);
+  if (cli) {
+    clienteSeleccionado = cli;
+    document.getElementById('editBuscarCliente').value  = cli.cedula;
+    document.getElementById('dispTelefono').textContent = cli.telefono || '—';
+  }
+
+  // Técnico: derivar código a partir del nombre mostrado
+  const tec = tecnicos.find(t => t.full === orden.tecnico);
+  if (tec) {
+    tecnicoSeleccionado = tec;
+    document.getElementById('editBuscarTecnico').value = String(tec.codigo);
+  }
+
+  document.getElementById('editEstado').value      = orden.estado || 'Pendiente';
+  document.getElementById('editDescripcion').value = orden.descripcion || '';
+  document.getElementById('dispFecha').textContent    = orden.fecha || '';
+  document.getElementById('dispNumOrden').textContent = folio || '';
+
+  // Laboratorio (sede sur)
+  if (sur) {
+    document.getElementById('sec5Editar').style.display = 'block';
+    document.getElementById('sec5Nueva').style.display  = 'none';
+    if (orden.encriptacion) document.getElementById('editEncriptacion').value = orden.encriptacion;
+    if (orden.protocolo)    document.getElementById('editProtocolo').value    = orden.protocolo;
+    if (orden.horas != null) document.getElementById('editHoras').value       = orden.horas;
+  }
+
+  // Repuestos actuales de la orden
+  try {
+    const dd = await detallesApi.list(folio);
+    repuestosAgregados = (dd.detalles || []).map(d => {
+      const cat = catalogo.find(c => c.codigo === d.codigo_repuesto);
+      return { codigo: d.codigo_repuesto, nombre: cat ? cat.nombre : '—', qty: d.cantidad };
+    });
+    repuestosOriginales = repuestosAgregados.map(r => ({ codigo: r.codigo, qty: r.qty }));
     renderRepuestos();
-  },
-});
+  } catch (err) {
+    repuestosAgregados = [];
+    renderTablaMensaje('bodyRepuestos', 4, mensajeDesconexion('Repuestos'));
+  }
+}
 
-// ===== Calendario =====
+// =====================================================================
+// Calendario (solo modo nueva)
+// =====================================================================
 function renderCalendar() {
   const year  = calDate.getFullYear();
   const month = calDate.getMonth();
@@ -330,7 +381,7 @@ function renderCalendar() {
         span.classList.add('other-month');
       } else {
         span.textContent = day;
-        const d        = day;
+        const d = day;
         const thisDate = new Date(year, month, d);
         const isFuture = thisDate > today;
 
@@ -339,8 +390,8 @@ function renderCalendar() {
         }
         if (selectedDate &&
             selectedDate.getFullYear() === year &&
-            selectedDate.getMonth()    === month &&
-            selectedDate.getDate()     === d) {
+            selectedDate.getMonth() === month &&
+            selectedDate.getDate() === d) {
           span.classList.add('selected');
         }
 
@@ -349,7 +400,9 @@ function renderCalendar() {
         } else {
           span.addEventListener('click', () => {
             selectedDate = new Date(year, month, d);
-            document.getElementById('fechaIngreso').value = selectedDate.toISOString().split('T')[0];
+            const mm = String(month + 1).padStart(2, '0');
+            const dd = String(d).padStart(2, '0');
+            document.getElementById('fechaIngreso').value = `${year}-${mm}-${dd}`;
             renderCalendar();
           });
         }
@@ -372,80 +425,119 @@ document.getElementById('calNext').addEventListener('click', () => {
   renderCalendar();
 });
 
-// ===== Guardar / Cancelar =====
-document.getElementById('btnGuardar').addEventListener('click', () => {
-  if (!modoEditar) {
-    if (!clienteSeleccionado) { alert('Seleccione un cliente.'); return; }
-    if (!tecnicoSeleccionado) { alert('Seleccione un técnico.'); return; }
-    if (!document.getElementById('descripcionFallo').value.trim()) {
-      alert('Ingrese la descripción del fallo.'); return;
-    }
-    if (!document.getElementById('fechaIngreso').value) {
-      alert('Seleccione la fecha de ingreso.'); return;
-    }
-    if (esSur) {
-      if (!document.getElementById('nivelEncriptacion').value) {
-        alert('Seleccione el nivel de encriptación.'); return;
-      }
-      if (!document.getElementById('protocoloSeguridad').value) {
-        alert('Seleccione el protocolo de seguridad.'); return;
-      }
-    }
-  }
-
-  if (modoEditar) {
-    const cedulaEdit      = document.getElementById('editBuscarCliente').value.trim();
-    const tecnicoEdit     = document.getElementById('editBuscarTecnico').value.trim();
-    const descripcionEdit = document.getElementById('editDescripcion').value.trim();
-
-    if (!cedulaEdit)      { alert('Ingrese la cédula del cliente.'); return; }
-    if (!tecnicoEdit)     { alert('Seleccione un técnico.'); return; }
-    if (!descripcionEdit) { alert('Ingrese la descripción del fallo.'); return; }
-
-    const numOrden = sessionStorage.getItem('ordenSeleccionada') || 'F-002';
-    document.getElementById('modalNumOrdenEditar').textContent = numOrden;
-    document.getElementById('modalExitoEditar').classList.add('active');
-  } else {
-    const numOrden = 'F-' + String(Math.floor(Math.random() * 900) + 100).padStart(3, '0');
-    document.getElementById('modalNumOrden').textContent = numOrden;
-    document.getElementById('modalExito').classList.add('active');
-  }
+// =====================================================================
+// Guardar
+// =====================================================================
+document.getElementById('btnGuardar').addEventListener('click', async () => {
+  if (modoEditar) await guardarEdicion();
+  else await guardarNueva();
 });
 
+async function guardarNueva() {
+  if (!clienteSeleccionado) { alert('Seleccione un cliente.'); return; }
+  if (!tecnicoSeleccionado) { alert('Seleccione un técnico.'); return; }
+  const descripcion = document.getElementById('descripcionFallo').value.trim();
+  if (!descripcion) { alert('Ingrese la descripción del fallo.'); return; }
+  const fecha = document.getElementById('fechaIngreso').value || null;
+  if (!fecha) { alert('Seleccione la fecha de ingreso.'); return; }
+
+  let encriptacion = null, protocolo = null, horas = null;
+  if (sur) {
+    encriptacion = document.getElementById('nivelEncriptacion').value || null;
+    protocolo    = document.getElementById('protocoloSeguridad').value || null;
+    const h = parseInt(document.getElementById('horasLaboratorio').value);
+    horas = isNaN(h) ? null : h;
+    if (!encriptacion) { alert('Seleccione el nivel de encriptación.'); return; }
+    if (!protocolo)    { alert('Seleccione el protocolo de seguridad.'); return; }
+  }
+
+  const body = {
+    fecha_ingreso: fecha,
+    descripcion_fallo: descripcion,
+    estado_orden: document.getElementById('estadoOrden').value,
+    codigo_tecnico: tecnicoSeleccionado.codigo,
+    cedula_cliente: clienteSeleccionado.cedula,
+    codigo_sede: nodo,
+    nivel_encriptacion: encriptacion,
+    protocolo_seguridad: protocolo,
+    horas_laboratorio: horas,
+    repuestos: repuestosAgregados.map(r => ({ codigo_repuesto: r.codigo, cantidad: r.qty })),
+  };
+
+  try {
+    const resp = await ordenesApi.crear(body);
+    document.getElementById('modalNumOrden').textContent = resp.numero_folio;
+    document.getElementById('modalExito').classList.add('active');
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function guardarEdicion() {
+  const folio = sessionStorage.getItem('ordenSeleccionada');
+  const descripcion = document.getElementById('editDescripcion').value.trim();
+  if (!descripcion) { alert('Ingrese la descripción del fallo.'); return; }
+  if (!tecnicoSeleccionado) { alert('Seleccione un técnico válido (por código).'); return; }
+
+  let encriptacion = null, protocolo = null, horas = null;
+  if (sur) {
+    encriptacion = document.getElementById('editEncriptacion').value || null;
+    protocolo    = document.getElementById('editProtocolo').value || null;
+    const h = parseInt(document.getElementById('editHoras').value);
+    horas = isNaN(h) ? null : h;
+  }
+
+  const { toUpdate, toAdd, toRemove } = diffRepuestos(repuestosOriginales, repuestosAgregados);
+
+  try {
+    // 1) Cabecera + laboratorio + cantidades de repuestos existentes
+    await ordenesApi.actualizar(folio, {
+      descripcion_fallo: descripcion,
+      estado_orden: document.getElementById('editEstado').value,
+      codigo_tecnico: tecnicoSeleccionado.codigo,
+      nivel_encriptacion: encriptacion,
+      protocolo_seguridad: protocolo,
+      horas_laboratorio: horas,
+      repuestos: toUpdate.map(r => ({ codigo_repuesto: r.codigo, cantidad: r.qty })),
+    });
+
+    // 2) Repuestos nuevos -> POST
+    for (const r of toAdd) {
+      await detallesApi.agregar(folio, { codigo_repuesto: r.codigo, cantidad: r.qty });
+    }
+    // 3) Repuestos quitados -> DELETE
+    for (const r of toRemove) {
+      await detallesApi.eliminar(folio, r.codigo);
+    }
+
+    document.getElementById('modalNumOrdenEditar').textContent = folio;
+    document.getElementById('modalExitoEditar').classList.add('active');
+  } catch (err) {
+    showError(err);
+  }
+}
+
+// ===== Cancelar / cierre de modales de éxito =====
 document.getElementById('btnCancelar').addEventListener('click', () => {
   window.location.href = 'dashboard.html';
 });
+document.getElementById('btnAceptarExito')?.addEventListener('click', () => { window.location.href = 'dashboard.html'; });
+document.getElementById('btnCerrarExito')?.addEventListener('click', () => { window.location.href = 'dashboard.html'; });
+document.getElementById('btnAceptarExitoEditar')?.addEventListener('click', () => { window.location.href = 'dashboard.html'; });
+document.getElementById('btnCerrarExitoEditar')?.addEventListener('click', () => { window.location.href = 'dashboard.html'; });
 
-document.getElementById('btnAceptarExito')?.addEventListener('click', () => {
-  window.location.href = 'dashboard.html';
-});
-document.getElementById('btnCerrarExito')?.addEventListener('click', () => {
-  window.location.href = 'dashboard.html';
-});
-document.getElementById('btnAceptarExitoEditar')?.addEventListener('click', () => {
-  window.location.href = 'dashboard.html';
-});
-document.getElementById('btnCerrarExitoEditar')?.addEventListener('click', () => {
-  window.location.href = 'dashboard.html';
-});
-
-// ===== Cierre de sesión =====
-document.getElementById('sidebarUserBtn').addEventListener('click', () => {
-  document.getElementById('logoutPanel').classList.toggle('open');
-});
-document.getElementById('btnLogout').addEventListener('click', () => {
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-});
-
-// ===== Inicializar =====
-if (!modoEditar) renderCalendar();
-
+// ===== Bloquear teclas no numéricas en horas =====
 const BLOCKED_KEYS = ['-', '+', 'e', 'E', '.', ','];
 ['horasLaboratorio', 'editHoras'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
-  el.addEventListener('keydown', e => {
-    if (BLOCKED_KEYS.includes(e.key)) e.preventDefault();
-  });
+  el.addEventListener('keydown', e => { if (BLOCKED_KEYS.includes(e.key)) e.preventDefault(); });
 });
+
+// ===== Inicializar =====
+if (nodo) init();
+
+// ===== Exportar helper para tests =====
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { diffRepuestos };
+}

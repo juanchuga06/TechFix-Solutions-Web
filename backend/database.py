@@ -1,10 +1,12 @@
 import os
+from pathlib import Path
 import pyodbc
 from fastapi import HTTPException
 from dotenv import load_dotenv
 
-# Esto busca el archivo .env en la misma carpeta y lo carga en memoria
-load_dotenv()
+# Carga el .env que está junto a este archivo, sin importar desde qué
+# carpeta se ejecute uvicorn (evita que las credenciales queden en None).
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 # Leemos las credenciales. Si no las encuentra, devolverá None.
 SERVER = os.getenv("DB_SERVER")

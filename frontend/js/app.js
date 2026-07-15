@@ -1,60 +1,86 @@
-// ===== Cierre de sesión =====
-document.getElementById('sidebarUserBtn')?.addEventListener('click', (e) => {
-  e.stopPropagation();
-  document.getElementById('logoutPanel').classList.toggle('open');
-});
+// =====================================================================
+// app.js — Dashboard de órdenes (lectura distribuida) vía API
+// (sesión y menú lateral los maneja ui.js)
+// =====================================================================
 
-document.getElementById('logoutPanel')?.addEventListener('click', (e) => {
-  e.stopPropagation();
-});
+const nodo = getNodo();
+const sur  = esSur();
 
-document.getElementById('btnLogout')?.addEventListener('click', () => {
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-});
-
-// ===== Datos de sesión =====
-const sede    = sessionStorage.getItem('sede') || 'norte';
-const usuario = sessionStorage.getItem('usuario') || 'Usuario';
-const esSur   = sede === 'sur';
-
-// Mostrar sede y usuario en sidebar
-const sedeLabel = document.getElementById('sedeLabel');
-if (sedeLabel) sedeLabel.textContent = 'Sede: ' + sede.toUpperCase();
-const sidebarUserName = document.getElementById('sidebarUserName');
-if (sidebarUserName) sidebarUserName.textContent = usuario;
-
-// ===== Mostrar/ocultar columnas sede sur =====
+// ===== Mostrar/ocultar columnas de la sede sur =====
 document.querySelectorAll('.col-sur').forEach(el => {
-  el.style.display = esSur ? '' : 'none';
+  el.style.display = sur ? '' : 'none';
 });
 
-// ===== Datos mock (se reemplazarán con fetch al API) =====
-const ordenesMock = [
-  { folio: 'F-001', fecha: '2024-06-01', descripcion: 'Pantalla rota',      estado: 'Pendiente',  tecnico: 'Carlos Ramírez',  cliente: 'Ana López',     encriptacion: 'AES-256',  protocolo: 'TLS 1.3', horas: 4 },
-  { folio: 'F-002', fecha: '2024-06-03', descripcion: 'No enciende',        estado: 'En proceso', tecnico: 'Luis Mendoza',    cliente: 'Pedro Díaz',    encriptacion: 'RSA-2048', protocolo: 'SSH',     horas: 6 },
-  { folio: 'F-003', fecha: '2024-06-05', descripcion: 'Batería defectuosa', estado: 'Finalizada', tecnico: 'María Suárez',    cliente: 'Juan García',   encriptacion: 'AES-128',  protocolo: 'TLS 1.2', horas: 2 },
-  { folio: 'F-004', fecha: '2024-06-07', descripcion: 'Teclado bloqueado',  estado: 'Pendiente',  tecnico: 'Carlos Ramírez',  cliente: 'Sofía Torres',  encriptacion: 'AES-256',  protocolo: 'TLS 1.3', horas: 3 },
-  { folio: 'F-005', fecha: '2024-06-08', descripcion: 'Puerto USB dañado',  estado: 'En proceso', tecnico: 'Luis Mendoza',    cliente: 'Marta Ruiz',    encriptacion: 'RSA-2048', protocolo: 'SSH',     horas: 5 },
-  { folio: 'F-006', fecha: '2024-06-10', descripcion: 'Sistema operativo',  estado: 'Finalizada', tecnico: 'María Suárez',    cliente: 'Roberto Vega',  encriptacion: 'AES-128',  protocolo: 'TLS 1.2', horas: 8 },
-];
+// ===== Estado =====
+let ordenes = [];          // catálogo cargado
+let selectedFolio = null;  // entero
 
-// ===== Estado de selección =====
-let selectedFolio = null;
-
-// ===== Columnas extra de sede sur para filas =====
-function colsSur(o) {
-  if (!esSur) return '';
-  return `<td style="display:table-cell">${o.encriptacion}</td>
-          <td style="display:table-cell">${o.protocolo}</td>
-          <td style="display:table-cell">${o.horas} h</td>`;
+function normalizar(o) {
+  return {
+    folio:        o.numero_folio,
+    fecha:        o.fecha_ingreso,
+    descripcion:  o.descripcion_fallo,
+    estado:       o.estado_orden,
+    tecnico:      o.nombre_tecnico,
+    cliente:      o.nombre_cliente,
+    sede:         o.codigo_sede,
+    encriptacion: o.nivel_encriptacion,
+    protocolo:    o.protocolo_seguridad,
+    horas:        o.horas_laboratorio,
+  };
 }
 
-// ===== Renderizar tabla "Todas las órdenes" =====
+// ===== Carga desde el API =====
+async function cargarOrdenes(fecha) {
+  try {
+    const data = await ordenesApi.dashboard(nodo, null, fecha || null);
+    ordenes = (data.ordenes || []).map(normalizar);
+    selectedFolio = null;
+    document.getElementById('btnEliminar').disabled   = true;
+    document.getElementById('btnActualizar').disabled = true;
+    renderTodo();
+  } catch (err) {
+    ordenes = [];
+    const colTodas  = sur ? 9 : 6;
+    const colEstado = sur ? 8 : 5;
+    renderTablaMensaje('bodyTodasOrdenes', colTodas,  mensajeDesconexion('Órdenes'));
+    renderTablaMensaje('bodyPendientes',   colEstado, mensajeDesconexion('Órdenes'));
+    renderTablaMensaje('bodyEnProceso',    colEstado, mensajeDesconexion('Órdenes'));
+    renderTablaMensaje('bodyFinalizadas',  colEstado, mensajeDesconexion('Órdenes'));
+  }
+}
+
+function renderTodo() {
+  renderTodasOrdenes(ordenes);
+  renderTablaEstado('bodyPendientes',  ordenes, 'Pendiente');
+  renderTablaEstado('bodyEnProceso',   ordenes, 'En Proceso');
+  renderTablaEstado('bodyFinalizadas', ordenes, 'Finalizada');
+}
+
+function badgeClass(estado) {
+  const map = { 'Pendiente': 'badge-pending', 'En Proceso': 'badge-progress', 'Finalizada': 'badge-done' };
+  return map[estado] || '';
+}
+
+function colsSur(o) {
+  if (!sur) return '';
+  return `<td style="display:table-cell">${o.encriptacion ?? '—'}</td>
+          <td style="display:table-cell">${o.protocolo ?? '—'}</td>
+          <td style="display:table-cell">${o.horas ?? '—'}</td>`;
+}
+
+// ===== Tabla "Todas las órdenes" (seleccionable) =====
 function renderTodasOrdenes(data) {
   const tbody = document.getElementById('bodyTodasOrdenes');
   if (!tbody) return;
   tbody.innerHTML = '';
+
+  if (!data.length) {
+    const cols = sur ? 9 : 6;
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Órdenes</td></tr>`;
+    return;
+  }
+
   data.forEach(o => {
     const tr = document.createElement('tr');
     tr.dataset.folio = o.folio;
@@ -64,79 +90,75 @@ function renderTodasOrdenes(data) {
       <td>${o.fecha}</td>
       <td>${o.descripcion}</td>
       <td><span class="badge ${badgeClass(o.estado)}">${o.estado}</span></td>
-      <td>${o.tecnico}</td>
-      <td>${o.cliente}</td>
+      <td>${o.tecnico ?? '—'}</td>
+      <td>${o.cliente ?? '—'}</td>
       ${colsSur(o)}
     `;
-    tr.addEventListener('click', () => selectOrden(o.folio, data));
+    tr.addEventListener('click', () => selectOrden(o.folio));
     tbody.appendChild(tr);
   });
 }
 
-// ===== Renderizar tablas de estado =====
 function renderTablaEstado(bodyId, data, estado) {
   const tbody = document.getElementById(bodyId);
   if (!tbody) return;
   tbody.innerHTML = '';
-  data.filter(o => o.estado === estado).forEach(o => {
+  const filtradas = data.filter(o => o.estado === estado);
+
+  if (!filtradas.length) {
+    const cols = sur ? 8 : 5;
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Órdenes</td></tr>`;
+    return;
+  }
+
+  filtradas.forEach(o => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${o.folio}</td>
       <td>${o.fecha}</td>
       <td>${o.descripcion}</td>
-      <td>${o.tecnico}</td>
-      <td>${o.cliente}</td>
+      <td>${o.tecnico ?? '—'}</td>
+      <td>${o.cliente ?? '—'}</td>
       ${colsSur(o)}
     `;
     tbody.appendChild(tr);
   });
 }
 
-function badgeClass(estado) {
-  const map = { 'Pendiente': 'badge-pending', 'En proceso': 'badge-progress', 'Finalizada': 'badge-done' };
-  return map[estado] || '';
-}
-
 // ===== Selección de fila =====
-function selectOrden(folio, data) {
+function selectOrden(folio) {
   selectedFolio = (selectedFolio === folio) ? null : folio;
-  renderTodasOrdenes(data);
-  const hasSelection = !!selectedFolio;
-  document.getElementById('btnEliminar').disabled   = !hasSelection;
-  document.getElementById('btnActualizar').disabled = !hasSelection;
+  renderTodasOrdenes(ordenes);
+  const has = selectedFolio !== null;
+  document.getElementById('btnEliminar').disabled   = !has;
+  document.getElementById('btnActualizar').disabled = !has;
 }
 
-// ===== Filtro por fecha =====
-document.getElementById('filtroFecha')?.addEventListener('input', function () {
-  const val = this.value;
-  const filtradas = val ? ordenesMock.filter(o => o.fecha === val) : ordenesMock;
-  selectedFolio = null;
-  document.getElementById('btnEliminar').disabled   = true;
-  document.getElementById('btnActualizar').disabled = true;
-  renderTodasOrdenes(filtradas);
+// ===== Filtro por fecha (consulta al API) =====
+document.getElementById('filtroFecha')?.addEventListener('change', function () {
+  cargarOrdenes(this.value || null);
 });
 
 // ===== Modal eliminar =====
 document.getElementById('btnEliminar')?.addEventListener('click', () => {
-  if (!selectedFolio) return;
-  const orden = ordenesMock.find(o => o.folio === selectedFolio);
+  if (selectedFolio === null) return;
+  const orden = ordenes.find(o => o.folio === selectedFolio);
   if (!orden) return;
 
   document.getElementById('modalFolio').textContent       = orden.folio;
   document.getElementById('modalFecha').textContent       = orden.fecha;
   document.getElementById('modalDescripcion').textContent = orden.descripcion;
   document.getElementById('modalEstado').textContent      = orden.estado;
-  document.getElementById('modalTecnico').textContent     = orden.tecnico;
-  document.getElementById('modalCliente').textContent     = orden.cliente;
+  document.getElementById('modalTecnico').textContent     = orden.tecnico ?? '—';
+  document.getElementById('modalCliente').textContent     = orden.cliente ?? '—';
 
-  // Campos sede sur
   document.querySelectorAll('.col-sur-modal').forEach(el => {
-    el.style.display = esSur ? '' : 'none';
+    el.style.display = sur ? '' : 'none';
   });
-  if (esSur) {
-    document.getElementById('modalEncriptacion').textContent = orden.encriptacion;
-    document.getElementById('modalProtocolo').textContent    = orden.protocolo;
-    document.getElementById('modalHoras').textContent        = orden.horas + ' h';
+  if (sur) {
+    document.getElementById('modalEncriptacion').textContent = orden.encriptacion ?? '—';
+    document.getElementById('modalProtocolo').textContent    = orden.protocolo ?? '—';
+    document.getElementById('modalHoras').textContent        = (orden.horas ?? '—') + (orden.horas != null ? ' h' : '');
   }
 
   document.getElementById('modalEliminar').classList.add('active');
@@ -146,47 +168,43 @@ document.getElementById('btnCancelarEliminar')?.addEventListener('click', () => 
   document.getElementById('modalEliminar').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarEliminar')?.addEventListener('click', () => {
-  // TODO: llamar API DELETE /ordenes/:folio
-  const idx = ordenesMock.findIndex(o => o.folio === selectedFolio);
-  if (idx !== -1) ordenesMock.splice(idx, 1);
-
-  document.getElementById('modalEliminar').classList.remove('active');
-  selectedFolio = null;
-  document.getElementById('btnEliminar').disabled   = true;
-  document.getElementById('btnActualizar').disabled = true;
-
-  renderTodasOrdenes(ordenesMock);
-  renderTablaEstado('bodyPendientes',  ordenesMock, 'Pendiente');
-  renderTablaEstado('bodyEnProceso',   ordenesMock, 'En proceso');
-  renderTablaEstado('bodyFinalizadas', ordenesMock, 'Finalizada');
+document.getElementById('btnConfirmarEliminar')?.addEventListener('click', async () => {
+  const folio = selectedFolio;
+  try {
+    await ordenesApi.eliminar(folio);
+    document.getElementById('modalEliminar').classList.remove('active');
+    await cargarOrdenes(document.getElementById('filtroFecha')?.value || null);
+  } catch (err) {
+    document.getElementById('modalEliminar').classList.remove('active');
+    showError(err);
+  }
 });
 
 document.getElementById('modalEliminar')?.addEventListener('click', function (e) {
   if (e.target === this) this.classList.remove('active');
 });
 
-// ===== Botones =====
+// ===== Botones nueva / actualizar =====
 document.getElementById('btnNueva')?.addEventListener('click', () => {
+  sessionStorage.removeItem('ordenEditar');
+  sessionStorage.removeItem('ordenSeleccionada');
   window.location.href = 'ordenes.html';
 });
 
 document.getElementById('btnActualizar')?.addEventListener('click', () => {
-  if (selectedFolio) {
-    sessionStorage.setItem('ordenSeleccionada', selectedFolio);
-    window.location.href = 'ordenes.html?modo=editar';
-  }
+  if (selectedFolio === null) return;
+  const orden = ordenes.find(o => o.folio === selectedFolio);
+  if (!orden) return;
+  sessionStorage.setItem('ordenSeleccionada', String(selectedFolio));
+  sessionStorage.setItem('ordenEditar', JSON.stringify(orden));
+  window.location.href = 'ordenes.html?modo=editar';
 });
 
 // ===== Inicializar =====
-// Limitar filtro de fecha a hoy como máximo
 const filtroFecha = document.getElementById('filtroFecha');
 if (filtroFecha) {
   const hoy = new Date().toISOString().split('T')[0];
   filtroFecha.setAttribute('max', hoy);
 }
 
-renderTodasOrdenes(ordenesMock);
-renderTablaEstado('bodyPendientes',  ordenesMock, 'Pendiente');
-renderTablaEstado('bodyEnProceso',   ordenesMock, 'En proceso');
-renderTablaEstado('bodyFinalizadas', ordenesMock, 'Finalizada');
+if (nodo) cargarOrdenes();

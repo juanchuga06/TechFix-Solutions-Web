@@ -109,12 +109,8 @@
         <input type="text" id="fCedula" placeholder="Type here..." maxlength="10" inputmode="numeric" />
       </div>
       <div class="field-row">
-        <label>Nombre:</label>
+        <label>Nombres y apellidos completos:</label>
         <input type="text" id="fNombre" placeholder="Type here..." />
-      </div>
-      <div class="field-row">
-        <label>Apellido:</label>
-        <input type="text" id="fApellido" placeholder="Type here..." />
       </div>
       <div class="field-row">
         <label>Teléfono:</label>
@@ -192,20 +188,12 @@
       <input type="hidden" id="updCedula" />
     </div>
 
-    <!-- Nombre -->
+    <!-- Nombres y apellidos completos -->
     <div class="upd-row" id="updRowNombre" style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-      <label style="min-width:150px; font-size:14px; font-weight:600; color:#222;">Nombre:</label>
+      <label style="min-width:150px; font-size:14px; font-weight:600; color:#222;">Nombres y apellidos completos:</label>
       <span class="upd-disp" id="updNombreDisp" style="font-size:14px; color:#333; flex:1;"></span>
       <input type="text" id="updNombre" class="upd-input" style="display:none; flex:1; padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px; outline:none;" />
       <button class="pencil-modal" data-row="updRowNombre" style="background:none;border:none;cursor:pointer;font-size:15px;color:#666;">✏️</button>
-    </div>
-
-    <!-- Apellido -->
-    <div class="upd-row" id="updRowApellido" style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-      <label style="min-width:150px; font-size:14px; font-weight:600; color:#222;">Apellido:</label>
-      <span class="upd-disp" id="updApellidoDisp" style="font-size:14px; color:#333; flex:1;"></span>
-      <input type="text" id="updApellido" class="upd-input" style="display:none; flex:1; padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px; outline:none;" />
-      <button class="pencil-modal" data-row="updRowApellido" style="background:none;border:none;cursor:pointer;font-size:15px;color:#666;">✏️</button>
     </div>
 
     <!-- Teléfono -->
@@ -265,6 +253,8 @@
   </div>
 </div>
 
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
 <script src="js/clientes.js"></script>
 </body>
 </html>

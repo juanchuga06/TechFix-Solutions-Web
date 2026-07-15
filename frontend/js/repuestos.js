@@ -1,16 +1,8 @@
-// ===== Sesión y sidebar =====
-const sede    = sessionStorage.getItem('sede') || 'norte';
-const usuario = sessionStorage.getItem('usuario') || 'Usuario';
-document.getElementById('sedeLabel').textContent       = 'Sede: ' + sede.toUpperCase();
-document.getElementById('sidebarUserName').textContent = usuario;
-
-document.getElementById('sidebarUserBtn').addEventListener('click', () => {
-  document.getElementById('logoutPanel').classList.toggle('open');
-});
-document.getElementById('btnLogout').addEventListener('click', () => {
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-});
+// =====================================================================
+// repuestos.js — Catálogo de repuestos conectado al API
+// (sesión y menú lateral los maneja ui.js)
+// El código del repuesto lo genera el procedimiento almacenado (entero).
+// =====================================================================
 
 // ===== Modal de éxito =====
 function showExito(titulo, mensaje) {
@@ -25,46 +17,52 @@ document.getElementById('btnAceptarExito').addEventListener('click', () => {
   document.getElementById('modalExito').classList.remove('active');
 });
 
-// ===== Generar código automático =====
-function generarCodigo() {
-  if (!repuestosMock.length) return 'R-001';
-  const nums = repuestosMock.map(r => parseInt(r.codigo.replace('R-', '')) || 0);
-  const next  = Math.max(...nums) + 1;
-  return 'R-' + String(next).padStart(3, '0');
+// ===== Estado =====
+let repuestos = [];        // { codigo, nombre, precio }
+let selectedCodigo = null; // entero
+
+function normalizar(r) {
+  return {
+    codigo: r.codigo_repuesto,
+    nombre: r.nombre_pieza,
+    precio: r.costo_unitario,
+  };
 }
 
-// ===== Datos mock =====
-let repuestosMock = [
-  { codigo: 'R-001', nombre: 'Pantalla LCD',       precio: 85.00  },
-  { codigo: 'R-002', nombre: 'Batería 4000mAh',    precio: 32.50  },
-  { codigo: 'R-003', nombre: 'Conector de carga',  precio: 12.00  },
-  { codigo: 'R-004', nombre: 'Altavoz interno',    precio: 18.75  },
-  { codigo: 'R-005', nombre: 'Cámara trasera',     precio: 55.00  },
-];
-
-let selectedCodigo = null;
+// ===== Carga desde el API =====
+async function cargarRepuestos() {
+  try {
+    const data = await repuestosApi.list();
+    repuestos = (data.repuestos || []).map(normalizar);
+    selectedCodigo = null;
+    document.getElementById('btnEliminarRepuesto').disabled   = true;
+    document.getElementById('btnActualizarRepuesto').disabled = true;
+    renderRepuestos();
+  } catch (err) {
+    repuestos = [];
+    renderTablaMensaje('bodyRepuestos', 3, mensajeDesconexion('Repuestos'));
+  }
+}
 
 // ===== Renderizar tabla =====
 function renderRepuestos() {
   const tbody = document.getElementById('bodyRepuestos');
   tbody.innerHTML = '';
 
-  if (!repuestosMock.length) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#aaa;padding:16px;">Sin repuestos</td></tr>';
+  if (!repuestos.length) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Repuestos</td></tr>';
     return;
   }
 
-  repuestosMock.forEach(r => {
+  repuestos.forEach(r => {
     const tr = document.createElement('tr');
     tr.dataset.codigo = r.codigo;
     if (r.codigo === selectedCodigo) tr.classList.add('selected');
 
     const tdCodigo = document.createElement('td');
     tdCodigo.textContent = r.codigo;
-
     const tdNombre = document.createElement('td');
     tdNombre.textContent = r.nombre;
-
     const tdPrecio = document.createElement('td');
     tdPrecio.textContent = parseFloat(r.precio).toFixed(2);
 
@@ -81,7 +79,7 @@ function renderRepuestos() {
 function selectRepuesto(codigo) {
   selectedCodigo = (selectedCodigo === codigo) ? null : codigo;
   renderRepuestos();
-  const has = !!selectedCodigo;
+  const has = selectedCodigo !== null;
   document.getElementById('btnEliminarRepuesto').disabled   = !has;
   document.getElementById('btnActualizarRepuesto').disabled = !has;
 }
@@ -111,27 +109,23 @@ document.getElementById('btnCerrarNuevo').addEventListener('click', () => {
   document.getElementById('modalNuevo').classList.remove('active');
 });
 
-document.getElementById('btnAgregarRepuesto').addEventListener('click', () => {
+document.getElementById('btnAgregarRepuesto').addEventListener('click', async () => {
   const nombre = document.getElementById('nuevoNombreRep').value.trim();
   const precio = parseFloat(document.getElementById('nuevoPrecioRep').value);
 
-  if (!nombre) { alert('Ingrese el nombre del repuesto.'); return; }
-  if (isNaN(precio) || precio < 0) { alert('Ingrese un precio válido.'); return; }
-
-  const codigo = generarCodigo();
-  // TODO: POST /api/repuestos  payload: { codigo, nombre, precio }
-  repuestosMock.push({ codigo, nombre, precio });
-  document.getElementById('modalNuevo').classList.remove('active');
-  selectedCodigo = null;
-  document.getElementById('btnEliminarRepuesto').disabled   = true;
-  document.getElementById('btnActualizarRepuesto').disabled = true;
-  renderRepuestos();
-  showExito('Repuesto Ingresado con Éxito', 'El repuesto se ingresó exitosamente.');
+  try {
+    await repuestosApi.crear({ nombre_pieza: nombre, costo_unitario: isNaN(precio) ? null : precio });
+    document.getElementById('modalNuevo').classList.remove('active');
+    await cargarRepuestos();
+    showExito('Repuesto Ingresado con Éxito', 'El repuesto se ingresó exitosamente.');
+  } catch (err) {
+    showError(err);
+  }
 });
 
 // ===== ELIMINAR REPUESTO =====
 document.getElementById('btnEliminarRepuesto').addEventListener('click', () => {
-  if (!selectedCodigo) return;
+  if (selectedCodigo === null) return;
   document.getElementById('modalElimCodigo').textContent = selectedCodigo;
   document.getElementById('modalEliminar').classList.add('active');
 });
@@ -140,24 +134,27 @@ document.getElementById('btnCancelarElim').addEventListener('click', () => {
   document.getElementById('modalEliminar').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarElim').addEventListener('click', () => {
-  // TODO: DELETE /api/repuestos/:codigo
-  repuestosMock = repuestosMock.filter(x => x.codigo !== selectedCodigo);
-  selectedCodigo = null;
-  document.getElementById('btnEliminarRepuesto').disabled   = true;
-  document.getElementById('btnActualizarRepuesto').disabled = true;
-  document.getElementById('modalEliminar').classList.remove('active');
-  renderRepuestos();
+document.getElementById('btnConfirmarElim').addEventListener('click', async () => {
+  const codigo = selectedCodigo;
+  try {
+    await repuestosApi.eliminar(codigo);
+    document.getElementById('modalEliminar').classList.remove('active');
+    await cargarRepuestos();
+    showExito('Repuesto Eliminado con Éxito', 'El repuesto se eliminó exitosamente.');
+  } catch (err) {
+    document.getElementById('modalEliminar').classList.remove('active');
+    showError(err);
+  }
 });
 
 // ===== ACTUALIZAR REPUESTO =====
 document.getElementById('btnActualizarRepuesto').addEventListener('click', () => {
-  if (!selectedCodigo) return;
-  const rep = repuestosMock.find(r => r.codigo === selectedCodigo);
+  if (selectedCodigo === null) return;
+  const rep = repuestos.find(r => r.codigo === selectedCodigo);
   if (!rep) return;
-  document.getElementById('updCodigo').value  = rep.codigo;
-  document.getElementById('updNombre').value  = rep.nombre;
-  document.getElementById('updPrecio').value  = parseFloat(rep.precio).toFixed(2);
+  document.getElementById('updCodigo').value = rep.codigo;
+  document.getElementById('updNombre').value = rep.nombre;
+  document.getElementById('updPrecio').value = parseFloat(rep.precio).toFixed(2);
   document.getElementById('modalActualizar').classList.add('active');
 });
 
@@ -165,23 +162,21 @@ document.getElementById('btnCerrarActualizar').addEventListener('click', () => {
   document.getElementById('modalActualizar').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarActualizar').addEventListener('click', () => {
+document.getElementById('btnConfirmarActualizar').addEventListener('click', async () => {
   const nuevoNombre = document.getElementById('updNombre').value.trim();
   const nuevoPrecio = parseFloat(document.getElementById('updPrecio').value);
 
-  if (!nuevoNombre) { alert('El nombre no puede estar vacío.'); return; }
-  if (isNaN(nuevoPrecio) || nuevoPrecio < 0) { alert('Ingrese un precio válido.'); return; }
-
-  const rep = repuestosMock.find(r => r.codigo === selectedCodigo);
-  if (rep) {
-    rep.nombre = nuevoNombre;
-    rep.precio = nuevoPrecio;
+  try {
+    await repuestosApi.actualizar(selectedCodigo, {
+      nombre_pieza:   nuevoNombre,
+      costo_unitario: isNaN(nuevoPrecio) ? null : nuevoPrecio,
+    });
+    document.getElementById('modalActualizar').classList.remove('active');
+    await cargarRepuestos();
+    showExito('Repuesto Actualizado con Éxito', 'El repuesto se actualizó exitosamente.');
+  } catch (err) {
+    showError(err);
   }
-  // TODO: PUT /api/repuestos/:codigo  payload: { nombre: nuevoNombre, precio: nuevoPrecio }
-
-  document.getElementById('modalActualizar').classList.remove('active');
-  renderRepuestos();
-  showExito('Repuesto Actualizado con Éxito', 'El repuesto se actualizó exitosamente.');
 });
 
 // Cerrar modales al clic fuera
@@ -192,4 +187,4 @@ document.getElementById('btnConfirmarActualizar').addEventListener('click', () =
 });
 
 // ===== Inicializar =====
-renderRepuestos();
+if (getNodo()) cargarRepuestos();

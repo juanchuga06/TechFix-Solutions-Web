@@ -1,45 +1,65 @@
-// ===== Sesión y sidebar =====
-const sede    = sessionStorage.getItem('sede') || 'norte';
-const usuario = sessionStorage.getItem('usuario') || 'Usuario';
-document.getElementById('sedeLabel').textContent       = 'Sede: ' + sede.toUpperCase();
-document.getElementById('sidebarUserName').textContent = usuario;
+// =====================================================================
+// tecnicos.js — Técnicos (fragmentados por sede) y Sedes, vía API
+// (sesión y menú lateral los maneja ui.js)
+// =====================================================================
+
+const nodo = getNodo();
+
+// Título con la sede activa
 document.getElementById('pageTitleTecnicos').textContent =
-  'Personal técnico de la Sede ' + sede.charAt(0).toUpperCase() + sede.slice(1);
+  'Personal técnico de la Sede ' + nombreSede(nodo);
 
-document.getElementById('sidebarUserBtn').addEventListener('click', function() {
-  document.getElementById('logoutPanel').classList.toggle('open');
-});
-document.getElementById('btnLogout').addEventListener('click', function() {
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-});
+// ===== Estado =====
+let tecnicos = [];          // { codigo, cedula, nombre, apellido, especialidad, sede }
+let selectedCodigo = null;  // entero (codigo_empleado)
 
-// ===== Datos =====
-var tecnicosMock = [
-  { codigo: 'T-001', cedula: '1234567890', nombre: 'Carlos', apellido: 'Ramírez', especialidad: 'Hardware', sede: 'norte' },
-  { codigo: 'T-002', cedula: '0987654321', nombre: 'Luis',   apellido: 'Morales', especialidad: 'Software', sede: 'norte' },
-  { codigo: 'T-003', cedula: '1122334455', nombre: 'María',  apellido: 'Salas',   especialidad: 'Redes',    sede: 'sur'   },
-  { codigo: 'T-004', cedula: '5544332211', nombre: 'Jorge',  apellido: 'Vega',    especialidad: 'Hardware', sede: 'sur'   },
-];
-
-var sedesMock = [
-  { nombre: 'Sede Norte', direccion: 'Av. Norte 123', telefono: '02-555-1001' },
-  { nombre: 'Sede Sur',   direccion: 'Calle Sur 456', telefono: '02-555-2002' },
-];
-
-var selectedCodigo = null;
-var contadorCodigo = tecnicosMock.length + 1;
-
-function nextCodigo() {
-  return 'T-' + String(contadorCodigo++).padStart(3, '0');
+function normalizarTecnico(t) {
+  return {
+    codigo:       t.codigo_empleado,
+    cedula:       t.cedula_tecnico,
+    nombre:       t.nombre_tecnico,
+    apellido:     t.apellido_tecnico,
+    especialidad: t.especialidad_tecnico,
+    sede:         t.codigo_sede,
+  };
 }
 
-// ===== Tabla técnicos =====
+// ===== Carga desde el API =====
+async function cargarTecnicos() {
+  try {
+    const data = await tecnicosApi.list(nodo);
+    tecnicos = (data.tecnicos || []).map(normalizarTecnico);
+    selectedCodigo = null;
+    document.getElementById('btnEliminarTecnico').disabled   = true;
+    document.getElementById('btnActualizarTecnico').disabled = true;
+    renderTecnicos();
+  } catch (err) {
+    tecnicos = [];
+    renderTablaMensaje('bodyTecnicos', 5, mensajeDesconexion('Técnicos'));
+  }
+}
+
+async function cargarSedes() {
+  try {
+    const data = await sedesApi.list();
+    renderSedes(data.sedes || []);
+  } catch (err) {
+    renderTablaMensaje('bodySedes', 3, mensajeDesconexion('Sedes'));
+  }
+}
+
+// ===== Tablas =====
 function renderTecnicos() {
-  var tbody = document.getElementById('bodyTecnicos');
+  const tbody = document.getElementById('bodyTecnicos');
   tbody.innerHTML = '';
-  tecnicosMock.filter(function(t) { return t.sede === sede; }).forEach(function(t) {
-    var tr = document.createElement('tr');
+
+  if (!tecnicos.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Técnicos</td></tr>';
+    return;
+  }
+
+  tecnicos.forEach(function(t) {
+    const tr = document.createElement('tr');
     if (t.codigo === selectedCodigo) tr.classList.add('selected');
     tr.innerHTML =
       '<td>' + t.codigo + '</td>' +
@@ -52,12 +72,19 @@ function renderTecnicos() {
   });
 }
 
-function renderSedes() {
-  var tbody = document.getElementById('bodySedes');
+function renderSedes(sedes) {
+  const tbody = document.getElementById('bodySedes');
   tbody.innerHTML = '';
-  sedesMock.forEach(function(s) {
-    var tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + s.nombre + '</td><td>' + s.direccion + '</td><td>' + s.telefono + '</td>';
+  if (!sedes.length) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Sedes</td></tr>';
+    return;
+  }
+  sedes.forEach(function(s) {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + s.nombre_sede + '</td>' +
+      '<td>' + s.direccion_sede + '</td>' +
+      '<td>' + s.telefono_sede + '</td>';
     tbody.appendChild(tr);
   });
 }
@@ -65,15 +92,19 @@ function renderSedes() {
 function selectTecnico(codigo) {
   selectedCodigo = (selectedCodigo === codigo) ? null : codigo;
   renderTecnicos();
-  var has = !!selectedCodigo;
+  const has = selectedCodigo !== null;
   document.getElementById('btnEliminarTecnico').disabled   = !has;
   document.getElementById('btnActualizarTecnico').disabled = !has;
 }
 
-// ===== Toggle lápiz =====
+function tecnicoSeleccionado() {
+  return tecnicos.find(function(t) { return t.codigo === selectedCodigo; }) || null;
+}
+
+// ===== Toggle lápiz (usado con onclick en el HTML) =====
 function toggleEdit(campo) {
-  var span  = document.getElementById('span'  + campo);
-  var input = document.getElementById('input' + campo);
+  const span  = document.getElementById('span'  + campo);
+  const input = document.getElementById('input' + campo);
   if (input.style.display === 'none' || input.style.display === '') {
     input.value         = span.textContent;
     span.style.display  = 'none';
@@ -98,23 +129,30 @@ document.getElementById('btnCerrarAgregar').addEventListener('click', function()
   document.getElementById('modalAgregarTecnico').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarAgregar').addEventListener('click', function() {
-  var cedula       = document.getElementById('agCedula').value.trim();
-  var nombre       = document.getElementById('agNombre').value.trim();
-  var apellido     = document.getElementById('agApellido').value.trim();
-  var especialidad = document.getElementById('agEspecialidad').value.trim();
-  if (!cedula || !nombre || !apellido || !especialidad) { alert('Complete todos los campos.'); return; }
-  tecnicosMock.push({ codigo: nextCodigo(), cedula: cedula, nombre: nombre, apellido: apellido, especialidad: especialidad, sede: sede });
-  document.getElementById('modalAgregarTecnico').classList.remove('active');
-  renderTecnicos();
+document.getElementById('btnConfirmarAgregar').addEventListener('click', async function() {
+  const cedula       = document.getElementById('agCedula').value.trim();
+  const nombre       = document.getElementById('agNombre').value.trim();
+  const apellido     = document.getElementById('agApellido').value.trim();
+  const especialidad = document.getElementById('agEspecialidad').value.trim();
+
+  try {
+    await tecnicosApi.crear({
+      cedula_tecnico:       cedula,
+      nombre_tecnico:       nombre,
+      apellido_tecnico:     apellido,
+      especialidad_tecnico: especialidad,
+      codigo_sede:          nodo,
+    });
+    document.getElementById('modalAgregarTecnico').classList.remove('active');
+    await cargarTecnicos();
+  } catch (err) {
+    showError(err);
+  }
 });
 
 // ===== ELIMINAR =====
 document.getElementById('btnEliminarTecnico').addEventListener('click', function() {
-  var t = null;
-  for (var i = 0; i < tecnicosMock.length; i++) {
-    if (tecnicosMock[i].codigo === selectedCodigo) { t = tecnicosMock[i]; break; }
-  }
+  const t = tecnicoSeleccionado();
   if (!t) return;
   document.getElementById('modalTecCodigo').textContent       = t.codigo;
   document.getElementById('modalTecCedula').textContent       = t.cedula;
@@ -128,38 +166,38 @@ document.getElementById('btnCancelarElimTecnico').addEventListener('click', func
   document.getElementById('modalEliminarTecnico').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarElimTecnico').addEventListener('click', function() {
-  tecnicosMock = tecnicosMock.filter(function(x) { return x.codigo !== selectedCodigo; });
-  selectedCodigo = null;
-  document.getElementById('btnEliminarTecnico').disabled   = true;
-  document.getElementById('btnActualizarTecnico').disabled = true;
-  document.getElementById('modalEliminarTecnico').classList.remove('active');
-  renderTecnicos();
+document.getElementById('btnConfirmarElimTecnico').addEventListener('click', async function() {
+  const codigo = selectedCodigo;
+  try {
+    await tecnicosApi.eliminar(codigo);
+    document.getElementById('modalEliminarTecnico').classList.remove('active');
+    await cargarTecnicos();
+  } catch (err) {
+    document.getElementById('modalEliminarTecnico').classList.remove('active');
+    showError(err);
+  }
 });
 
 // ===== ACTUALIZAR =====
 document.getElementById('btnActualizarTecnico').addEventListener('click', function() {
-  var t = null;
-  for (var i = 0; i < tecnicosMock.length; i++) {
-    if (tecnicosMock[i].codigo === selectedCodigo) { t = tecnicosMock[i]; break; }
-  }
+  const t = tecnicoSeleccionado();
   if (!t) return;
 
   document.getElementById('updCodigoDisp').textContent = t.codigo;
   document.getElementById('updCedulaDisp').textContent = t.cedula;
 
-  document.getElementById('spanNombre').textContent       = t.nombre;
-  document.getElementById('spanNombre').style.display     = 'inline';
-  document.getElementById('inputNombre').value            = t.nombre;
-  document.getElementById('inputNombre').style.display    = 'none';
+  document.getElementById('spanNombre').textContent    = t.nombre;
+  document.getElementById('spanNombre').style.display  = 'inline';
+  document.getElementById('inputNombre').value         = t.nombre;
+  document.getElementById('inputNombre').style.display = 'none';
 
-  document.getElementById('spanApellido').textContent     = t.apellido;
-  document.getElementById('spanApellido').style.display   = 'inline';
-  document.getElementById('inputApellido').value          = t.apellido;
-  document.getElementById('inputApellido').style.display  = 'none';
+  document.getElementById('spanApellido').textContent    = t.apellido;
+  document.getElementById('spanApellido').style.display  = 'inline';
+  document.getElementById('inputApellido').value         = t.apellido;
+  document.getElementById('inputApellido').style.display = 'none';
 
   document.getElementById('spanEspecialidad').textContent    = t.especialidad;
-  document.getElementById('spanEspecialidad').style.display  = 'inline';
+  document.getElementById('spanEspecialidad').style.display   = 'inline';
   document.getElementById('inputEspecialidad').value         = t.especialidad;
   document.getElementById('inputEspecialidad').style.display = 'none';
 
@@ -169,29 +207,35 @@ document.getElementById('btnActualizarTecnico').addEventListener('click', functi
 document.getElementById('btnCerrarActualizar').addEventListener('click', function() {
   document.getElementById('modalActualizarTecnico').classList.remove('active');
 });
-
 document.getElementById('btnCancelarActualizar').addEventListener('click', function() {
   document.getElementById('modalActualizarTecnico').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarActualizar').addEventListener('click', function() {
-  var t = null;
-  for (var i = 0; i < tecnicosMock.length; i++) {
-    if (tecnicosMock[i].codigo === selectedCodigo) { t = tecnicosMock[i]; break; }
-  }
+document.getElementById('btnConfirmarActualizar').addEventListener('click', async function() {
+  const t = tecnicoSeleccionado();
   if (!t) return;
 
-  var inNombre = document.getElementById('inputNombre');
-  var inApell  = document.getElementById('inputApellido');
-  var inEsp    = document.getElementById('inputEspecialidad');
+  const inNombre = document.getElementById('inputNombre');
+  const inApell  = document.getElementById('inputApellido');
+  const inEsp    = document.getElementById('inputEspecialidad');
 
-  t.nombre       = (inNombre.style.display !== 'none' ? inNombre.value.trim()  : document.getElementById('spanNombre').textContent.trim())       || t.nombre;
-  t.apellido     = (inApell.style.display  !== 'none' ? inApell.value.trim()   : document.getElementById('spanApellido').textContent.trim())      || t.apellido;
-  t.especialidad = (inEsp.style.display    !== 'none' ? inEsp.value.trim()     : document.getElementById('spanEspecialidad').textContent.trim())  || t.especialidad;
+  const nombre       = (inNombre.style.display !== 'none' ? inNombre.value.trim() : document.getElementById('spanNombre').textContent.trim()) || t.nombre;
+  const apellido     = (inApell.style.display  !== 'none' ? inApell.value.trim()  : document.getElementById('spanApellido').textContent.trim()) || t.apellido;
+  const especialidad = (inEsp.style.display    !== 'none' ? inEsp.value.trim()    : document.getElementById('spanEspecialidad').textContent.trim()) || t.especialidad;
 
-  document.getElementById('modalActualizarTecnico').classList.remove('active');
-  document.getElementById('modalActualizadoExitoTec').classList.add('active');
-  renderTecnicos();
+  try {
+    await tecnicosApi.actualizar(t.codigo, {
+      cedula_tecnico:       t.cedula,
+      nombre_tecnico:       nombre,
+      apellido_tecnico:     apellido,
+      especialidad_tecnico: especialidad,
+    });
+    document.getElementById('modalActualizarTecnico').classList.remove('active');
+    document.getElementById('modalActualizadoExitoTec').classList.add('active');
+    await cargarTecnicos();
+  } catch (err) {
+    showError(err);
+  }
 });
 
 document.getElementById('btnAceptarActualizadoTec').addEventListener('click', function() {
@@ -211,5 +255,7 @@ document.getElementById('agCedula').addEventListener('input', function () {
 });
 
 // ===== Inicializar =====
-renderTecnicos();
-renderSedes();
+if (nodo) {
+  cargarTecnicos();
+  cargarSedes();
+}

@@ -1,46 +1,61 @@
-// ===== Sesión =====
-const sede    = sessionStorage.getItem('sede') || 'norte';
-const usuario = sessionStorage.getItem('usuario') || 'Usuario';
-document.getElementById('sedeLabel').textContent      = 'Sede: ' + sede.toUpperCase();
-document.getElementById('sidebarUserName').textContent = usuario;
+// =====================================================================
+// clientes.js — Gestión de clientes conectada al API
+// (sesión y menú lateral los maneja ui.js)
+// =====================================================================
 
-// ===== Datos mock =====
-let clientesMock = [
-  { cedula: '175094144',  nombre: 'Juan',   apellido: 'Pérez',   telefono: '0996541144', correo: 'juan.perez@email.com' },
-  { cedula: '176548924',  nombre: 'María',  apellido: 'López',   telefono: '0996547788', correo: 'mlopez@email.com' },
-  { cedula: '105566253',  nombre: 'Carlos', apellido: 'Sánchez', telefono: '0996542255', correo: 'csanchez@email.com' },
-  { cedula: '098123456',  nombre: 'Sofía',  apellido: 'Torres',  telefono: '0976543210', correo: 'storres@email.com' },
-  { cedula: '087654321',  nombre: 'Pedro',  apellido: 'Díaz',    telefono: '0981234567', correo: 'pdiaz@email.com' },
-  { cedula: '112233445',  nombre: 'Ana',    apellido: 'García',  telefono: '0991122334', correo: 'agarcia@email.com' },
-  { cedula: '223344556',  nombre: 'Luis',   apellido: 'Mora',    telefono: '0992233445', correo: 'lmora@email.com' },
-];
-
-// ===== Paginación =====
+// ===== Estado =====
+let clientes = [];              // catálogo cargado desde el API
+let clientesFiltrados = [];
 const POR_PAGINA = 6;
 let paginaActual = 1;
-let clientesFiltrados = [...clientesMock];
 let clienteParaEliminar = null;
 let clienteParaActualizar = null;
+
+// Normaliza un registro del API a la forma que usa la vista.
+function normalizar(c) {
+  return {
+    cedula:   c.cedula_cliente,
+    nombre:   c.nombre_completo,
+    telefono: c.telefono_cliente,
+    correo:   c.correo_cliente,
+  };
+}
+
+// ===== Carga desde el API =====
+async function cargarClientes() {
+  try {
+    const data = await clientesApi.list();
+    clientes = (data.clientes || []).map(normalizar);
+    clientesFiltrados = [...clientes];
+    paginaActual = 1;
+    renderTabla();
+  } catch (err) {
+    clientes = [];
+    clientesFiltrados = [];
+    renderTablaMensaje('bodyClientes', 5, mensajeDesconexion('Clientes'));
+    document.getElementById('paginacion').innerHTML = '';
+  }
+}
 
 // ===== Renderizar tabla =====
 function renderTabla() {
   const tbody = document.getElementById('bodyClientes');
   tbody.innerHTML = '';
 
-  const inicio = (paginaActual - 1) * POR_PAGINA;
-  const pagina = clientesFiltrados.slice(inicio, inicio + POR_PAGINA);
-
-  if (!pagina.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#aaa;padding:16px;">Sin resultados</td></tr>`;
+  if (!clientesFiltrados.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Clientes</td></tr>`;
     renderPaginacion();
     return;
   }
+
+  const inicio = (paginaActual - 1) * POR_PAGINA;
+  const pagina = clientesFiltrados.slice(inicio, inicio + POR_PAGINA);
 
   pagina.forEach(c => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${c.cedula}</td>
-      <td>${c.nombre} ${c.apellido}</td>
+      <td>${c.nombre}</td>
       <td>${c.telefono}</td>
       <td>${c.correo}</td>
       <td style="display:flex; gap:6px;">
@@ -53,7 +68,7 @@ function renderTabla() {
 
   tbody.querySelectorAll('button[data-action]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const c = clientesMock.find(x => x.cedula === btn.dataset.cedula);
+      const c = clientes.find(x => x.cedula === btn.dataset.cedula);
       if (btn.dataset.action === 'actualizar') abrirActualizar(c);
       if (btn.dataset.action === 'eliminar')   abrirEliminar(c);
     });
@@ -63,8 +78,8 @@ function renderTabla() {
 }
 
 function renderPaginacion() {
-  const total  = Math.ceil(clientesFiltrados.length / POR_PAGINA);
-  const div    = document.getElementById('paginacion');
+  const total = Math.ceil(clientesFiltrados.length / POR_PAGINA);
+  const div = document.getElementById('paginacion');
   div.innerHTML = '';
   if (total <= 1) return;
 
@@ -89,53 +104,51 @@ function renderPaginacion() {
   div.appendChild(btnNext);
 }
 
-// ===== Búsqueda =====
+// ===== Búsqueda (filtra el catálogo cargado) =====
 document.getElementById('buscarClienteDir').addEventListener('input', function () {
   const q = this.value.trim().toLowerCase();
   clientesFiltrados = q
-    ? clientesMock.filter(c =>
-        c.cedula.includes(q) ||
-        (c.nombre + ' ' + c.apellido).toLowerCase().includes(q) ||
-        c.correo.toLowerCase().includes(q))
-    : [...clientesMock];
+    ? clientes.filter(c =>
+        c.cedula.toLowerCase().includes(q) ||
+        (c.nombre || '').toLowerCase().includes(q) ||
+        (c.correo || '').toLowerCase().includes(q))
+    : [...clientes];
   paginaActual = 1;
   renderTabla();
 });
 
 // ===== Limpiar formulario =====
 document.getElementById('btnLimpiar').addEventListener('click', () => {
-  ['fCedula','fNombre','fApellido','fTelefono','fCorreo'].forEach(id => {
+  ['fCedula','fNombre','fTelefono','fCorreo'].forEach(id => {
     document.getElementById(id).value = '';
   });
 });
 
 // ===== Registrar cliente =====
-document.getElementById('btnRegistrar').addEventListener('click', () => {
+document.getElementById('btnRegistrar').addEventListener('click', async () => {
   const cedula   = document.getElementById('fCedula').value.trim();
   const nombre   = document.getElementById('fNombre').value.trim();
-  const apellido = document.getElementById('fApellido').value.trim();
   const telefono = document.getElementById('fTelefono').value.trim();
   const correo   = document.getElementById('fCorreo').value.trim();
 
-  if (!cedula || !nombre || !apellido || !telefono || !correo) {
-    alert('Complete todos los campos.'); return;
+  try {
+    await clientesApi.crear({
+      cedula_cliente:   cedula,
+      nombre_completo:  nombre,
+      telefono_cliente: telefono,
+      correo_cliente:   correo,
+    });
+
+    ['fCedula','fNombre','fTelefono','fCorreo'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+
+    document.getElementById('modalRegistroNombre').textContent = nombre;
+    document.getElementById('modalRegistro').classList.add('active');
+    await cargarClientes();
+  } catch (err) {
+    showError(err);
   }
-  if (clientesMock.find(c => c.cedula === cedula)) {
-    alert('Ya existe un cliente con esa cédula.'); return;
-  }
-
-  // TODO: POST /api/clientes
-  clientesMock.push({ cedula, nombre, apellido, telefono, correo });
-  clientesFiltrados = [...clientesMock];
-
-  // Limpiar form y mostrar modal
-  ['fCedula','fNombre','fApellido','fTelefono','fCorreo'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-
-  document.getElementById('modalRegistroNombre').textContent = nombre + ' ' + apellido;
-  document.getElementById('modalRegistro').classList.add('active');
-  renderTabla();
 });
 
 // ===== Modal registro exitoso =====
@@ -149,26 +162,22 @@ document.getElementById('btnCerrarRegistro')?.addEventListener('click', () => {
 // ===== Actualizar =====
 function abrirActualizar(c) {
   clienteParaActualizar = c;
-  document.getElementById('updCedula').value        = c.cedula;
+  document.getElementById('updCedula').value           = c.cedula;
   document.getElementById('updCedulaDisp').textContent = c.cedula;
 
-  // Poblar displays e inputs
   const campos = [
     { disp: 'updNombreDisp',   input: 'updNombre',   val: c.nombre   },
-    { disp: 'updApellidoDisp', input: 'updApellido', val: c.apellido },
     { disp: 'updTelefonoDisp', input: 'updTelefono', val: c.telefono },
     { disp: 'updCorreoDisp',   input: 'updCorreo',   val: c.correo   },
   ];
   campos.forEach(({ disp, input, val }) => {
-    document.getElementById(disp).textContent  = val;
-    document.getElementById(input).value       = val;
+    document.getElementById(disp).textContent   = val;
+    document.getElementById(input).value        = val;
     document.getElementById(input).style.display = 'none';
     document.getElementById(disp).style.display  = '';
   });
 
-  // Resetear filas (quitar clase editing si quedó)
   document.querySelectorAll('.upd-row').forEach(row => row.classList.remove('editing'));
-
   document.getElementById('modalActualizar').classList.add('active');
 }
 
@@ -193,21 +202,30 @@ document.querySelectorAll('.pencil-modal').forEach(btn => {
 document.getElementById('btnCerrarActualizar')?.addEventListener('click', () => {
   document.getElementById('modalActualizar').classList.remove('active');
 });
-
 document.getElementById('btnCancelarActualizar').addEventListener('click', () => {
   document.getElementById('modalActualizar').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarActualizar').addEventListener('click', () => {
+document.getElementById('btnConfirmarActualizar').addEventListener('click', async () => {
   if (!clienteParaActualizar) return;
-  // TODO: PUT /api/clientes/:cedula
-  clienteParaActualizar.nombre   = document.getElementById('updNombre').value.trim()   || clienteParaActualizar.nombre;
-  clienteParaActualizar.apellido = document.getElementById('updApellido').value.trim() || clienteParaActualizar.apellido;
-  clienteParaActualizar.telefono = document.getElementById('updTelefono').value.trim() || clienteParaActualizar.telefono;
-  clienteParaActualizar.correo   = document.getElementById('updCorreo').value.trim()   || clienteParaActualizar.correo;
-  document.getElementById('modalActualizar').classList.remove('active');
-  document.getElementById('modalActualizadoExito').classList.add('active');
-  renderTabla();
+
+  const nombre   = document.getElementById('updNombre').value.trim();
+  const telefono = document.getElementById('updTelefono').value.trim();
+  const correo   = document.getElementById('updCorreo').value.trim();
+
+  try {
+    await clientesApi.actualizar(clienteParaActualizar.cedula, {
+      cedula_cliente:   clienteParaActualizar.cedula,
+      nombre_completo:  nombre,
+      telefono_cliente: telefono,
+      correo_cliente:   correo,
+    });
+    document.getElementById('modalActualizar').classList.remove('active');
+    document.getElementById('modalActualizadoExito').classList.add('active');
+    await cargarClientes();
+  } catch (err) {
+    showError(err);
+  }
 });
 
 ['btnAceptarActualizadoExito','btnCerrarActualizadoExito'].forEach(id => {
@@ -220,7 +238,7 @@ document.getElementById('btnConfirmarActualizar').addEventListener('click', () =
 function abrirEliminar(c) {
   clienteParaEliminar = c;
   document.getElementById('modalElimCedula').textContent = c.cedula;
-  document.getElementById('modalElimNombre').textContent = c.nombre + ' ' + c.apellido;
+  document.getElementById('modalElimNombre').textContent = c.nombre;
   document.getElementById('modalEliminarCliente').classList.add('active');
 }
 
@@ -228,15 +246,18 @@ document.getElementById('btnCancelarElimCliente').addEventListener('click', () =
   document.getElementById('modalEliminarCliente').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarElimCliente').addEventListener('click', () => {
+document.getElementById('btnConfirmarElimCliente').addEventListener('click', async () => {
   if (!clienteParaEliminar) return;
-  // TODO: DELETE /api/clientes/:cedula
-  clientesMock = clientesMock.filter(c => c.cedula !== clienteParaEliminar.cedula);
-  clientesFiltrados = [...clientesMock];
-  clienteParaEliminar = null;
-  if ((paginaActual - 1) * POR_PAGINA >= clientesFiltrados.length && paginaActual > 1) paginaActual--;
-  document.getElementById('modalEliminarCliente').classList.remove('active');
-  renderTabla();
+  const cedula = clienteParaEliminar.cedula;
+  try {
+    await clientesApi.eliminar(cedula);
+    clienteParaEliminar = null;
+    document.getElementById('modalEliminarCliente').classList.remove('active');
+    await cargarClientes();
+  } catch (err) {
+    document.getElementById('modalEliminarCliente').classList.remove('active');
+    showError(err);
+  }
 });
 
 // Cerrar modales al clic fuera
@@ -246,19 +267,10 @@ document.getElementById('btnConfirmarElimCliente').addEventListener('click', () 
   });
 });
 
-// ===== Cierre de sesión =====
-document.getElementById('sidebarUserBtn').addEventListener('click', () => {
-  document.getElementById('logoutPanel').classList.toggle('open');
-});
-document.getElementById('btnLogout').addEventListener('click', () => {
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-});
-
 // ===== Filtro numérico en campo cédula =====
 document.getElementById('fCedula').addEventListener('input', function () {
   this.value = this.value.replace(/[^0-9]/g, '');
 });
 
 // ===== Inicializar =====
-renderTabla();
+if (getNodo()) cargarClientes();
