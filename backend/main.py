@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Importamos los módulos de rutas que desarrollaste
-from routes import clientes, repuestos, tecnicos, ordenes
+from routes import clientes, repuestos, tecnicos, ordenes, sedes, detalles
 
 # Inicializamos la aplicación FastAPI
 app = FastAPI(
@@ -28,6 +28,8 @@ app.include_router(clientes.router)
 app.include_router(repuestos.router)
 app.include_router(tecnicos.router)
 app.include_router(ordenes.router)
+app.include_router(sedes.router)
+app.include_router(detalles.router)
 
 @app.get("/")
 def home():
