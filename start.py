@@ -43,17 +43,28 @@ def esperar_puerto(port, timeout=30):
     return False
 
 
-def ips_locales():
-    """Lista las direcciones IPv4 de esta máquina (incluye la de la VPN)."""
-    ips = set()
+def ip_wifi():
+    """IP de la conexión principal (WiFi/LAN) usada para salir a la red."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))  # no envía nada; solo elige la interfaz
+        return s.getsockname()[0]
+    except Exception:
+        return None
+    finally:
+        s.close()
+
+
+def ip_radmin():
+    """IP de la VPN Radmin (rango 26.x.x.x)."""
     try:
         _, _, addrs = socket.gethostbyname_ex(socket.gethostname())
         for a in addrs:
-            if not a.startswith("127."):
-                ips.add(a)
+            if a.startswith("26."):
+                return a
     except Exception:
         pass
-    return sorted(ips)
+    return None
 
 
 def encontrar_navegador():
@@ -112,12 +123,15 @@ def main():
     esperar_puerto(API_PORT)
     esperar_puerto(WEB_PORT)
 
-    # Muestra las URLs que un compañero puede abrir desde su navegador.
+    # URLs para compartir: solo la de la VPN Radmin y la del WiFi.
+    radmin = ip_radmin()
+    wifi   = ip_wifi()
     print("\n" + "=" * 60)
-    print("App local:  " + INDEX_URL)
-    for ip in ips_locales():
-        print(f"Compartir:  http://{ip}:{WEB_PORT}/index.html")
-    print("(Comparta la URL con su IP de la VPN, p. ej. la 26.x.x.x)")
+    print("App local:   " + INDEX_URL)
+    if radmin:
+        print(f"Radmin VPN:  http://{radmin}:{WEB_PORT}/index.html")
+    if wifi:
+        print(f"WiFi/LAN:    http://{wifi}:{WEB_PORT}/index.html")
     print("=" * 60 + "\n")
 
     navegador = encontrar_navegador()
