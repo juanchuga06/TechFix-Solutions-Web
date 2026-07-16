@@ -143,12 +143,9 @@ document.getElementById('btnCerrarActualizarRep').addEventListener('click', () =
 document.getElementById('btnCancelarActualizarRep').addEventListener('click', () => {
   document.getElementById('modalActualizarRep').classList.remove('active');
 });
-document.getElementById('actualizarRepQty').addEventListener('keydown', e => {
-  if (['-', '+', 'e', 'E', '.', ','].includes(e.key)) e.preventDefault();
-});
 document.getElementById('btnConfirmarActualizarRep').addEventListener('click', () => {
   const qty = parseInt(document.getElementById('actualizarRepQty').value);
-  if (isNaN(qty) || qty < 1) { alert('Ingrese una cantidad válida (mínimo 1).'); return; }
+  if (isNaN(qty) || qty <= 0) { showError(null, 'La cantidad debe ser un número mayor a 0.'); return; }
   const rep = repuestosAgregados.find(r => r.codigo === pendingActualizarCodigo);
   if (rep) rep.qty = qty;
   document.getElementById('modalActualizarRep').classList.remove('active');
@@ -276,6 +273,13 @@ async function init() {
   if (modoEditar) {
     await prellenarEdicion();
   } else {
+    // La fecha de hoy queda preseleccionada para ahorrar un clic.
+    const hoy = new Date();
+    selectedDate = hoy;
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    document.getElementById('fechaIngreso').value = `${hoy.getFullYear()}-${mm}-${dd}`;
+
     renderCalendar();
     if (repuestosOk) renderRepuestos();
     else renderTablaMensaje('bodyRepuestos', 4, mensajeDesconexion('Repuestos'));
@@ -297,7 +301,13 @@ async function prellenarEdicion() {
   let orden = {};
   try { orden = JSON.parse(sessionStorage.getItem('ordenEditar') || '{}'); } catch (_) {}
 
-  // Cliente (solo visualización; el SP de actualización no cambia el cliente)
+  // Cliente (solo visualización; el SP de actualización NO cambia el cliente,
+  // por eso el campo queda bloqueado en la pantalla de modificación).
+  const editCli = document.getElementById('editBuscarCliente');
+  editCli.readOnly = true;
+  editCli.classList.add('input-bloqueado');
+  editCli.title = 'El cliente de una orden no se puede modificar';
+
   document.getElementById('dispNombre').textContent   = orden.cliente || '—';
   document.getElementById('dispTelefono').textContent = '—';
   const cli = clientes.find(c => c.nombre === orden.cliente);
@@ -434,21 +444,22 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
 });
 
 async function guardarNueva() {
-  if (!clienteSeleccionado) { alert('Seleccione un cliente.'); return; }
-  if (!tecnicoSeleccionado) { alert('Seleccione un técnico.'); return; }
+  if (!clienteSeleccionado) { showError(null, 'Seleccione un cliente.'); return; }
+  if (!tecnicoSeleccionado) { showError(null, 'Seleccione un técnico.'); return; }
   const descripcion = document.getElementById('descripcionFallo').value.trim();
-  if (!descripcion) { alert('Ingrese la descripción del fallo.'); return; }
+  if (!descripcion) { showError(null, 'Ingrese la descripción del fallo.'); return; }
   const fecha = document.getElementById('fechaIngreso').value || null;
-  if (!fecha) { alert('Seleccione la fecha de ingreso.'); return; }
+  if (!fecha) { showError(null, 'Seleccione la fecha de ingreso.'); return; }
 
   let encriptacion = null, protocolo = null, horas = null;
   if (sur) {
     encriptacion = document.getElementById('nivelEncriptacion').value || null;
     protocolo    = document.getElementById('protocoloSeguridad').value || null;
+    if (!encriptacion) { showError(null, 'Seleccione el nivel de encriptación.'); return; }
+    if (!protocolo)    { showError(null, 'Seleccione el protocolo de seguridad.'); return; }
     const h = parseInt(document.getElementById('horasLaboratorio').value);
-    horas = isNaN(h) ? null : h;
-    if (!encriptacion) { alert('Seleccione el nivel de encriptación.'); return; }
-    if (!protocolo)    { alert('Seleccione el protocolo de seguridad.'); return; }
+    if (isNaN(h) || h <= 0) { showError(null, 'Las horas de laboratorio deben ser un valor mayor a 0.'); return; }
+    horas = h;
   }
 
   const body = {
@@ -464,57 +475,64 @@ async function guardarNueva() {
     repuestos: repuestosAgregados.map(r => ({ codigo_repuesto: r.codigo, cantidad: r.qty })),
   };
 
-  try {
-    const resp = await ordenesApi.crear(body);
-    document.getElementById('modalNumOrden').textContent = resp.numero_folio;
-    document.getElementById('modalExito').classList.add('active');
-  } catch (err) {
-    showError(err);
-  }
+  await conCarga(document.getElementById('btnGuardar'), async () => {
+    try {
+      const resp = await ordenesApi.crear(body);
+      document.getElementById('modalNumOrden').textContent = resp.numero_folio;
+      document.getElementById('modalExito').classList.add('active');
+    } catch (err) {
+      showError(err);
+    }
+  });
 }
 
 async function guardarEdicion() {
   const folio = sessionStorage.getItem('ordenSeleccionada');
   const descripcion = document.getElementById('editDescripcion').value.trim();
-  if (!descripcion) { alert('Ingrese la descripción del fallo.'); return; }
-  if (!tecnicoSeleccionado) { alert('Seleccione un técnico válido (por código).'); return; }
+  if (!descripcion) { showError(null, 'Ingrese la descripción del fallo.'); return; }
+  if (!tecnicoSeleccionado) { showError(null, 'Seleccione un técnico válido (por código).'); return; }
 
   let encriptacion = null, protocolo = null, horas = null;
   if (sur) {
     encriptacion = document.getElementById('editEncriptacion').value || null;
     protocolo    = document.getElementById('editProtocolo').value || null;
+    if (!encriptacion) { showError(null, 'Seleccione el nivel de encriptación.'); return; }
+    if (!protocolo)    { showError(null, 'Seleccione el protocolo de seguridad.'); return; }
     const h = parseInt(document.getElementById('editHoras').value);
-    horas = isNaN(h) ? null : h;
+    if (isNaN(h) || h <= 0) { showError(null, 'Las horas de laboratorio deben ser un valor mayor a 0.'); return; }
+    horas = h;
   }
 
   const { toUpdate, toAdd, toRemove } = diffRepuestos(repuestosOriginales, repuestosAgregados);
 
-  try {
-    // 1) Cabecera + laboratorio + cantidades de repuestos existentes
-    await ordenesApi.actualizar(folio, {
-      descripcion_fallo: descripcion,
-      estado_orden: document.getElementById('editEstado').value,
-      codigo_tecnico: tecnicoSeleccionado.codigo,
-      nivel_encriptacion: encriptacion,
-      protocolo_seguridad: protocolo,
-      horas_laboratorio: horas,
-      repuestos: toUpdate.map(r => ({ codigo_repuesto: r.codigo, cantidad: r.qty })),
-    });
+  await conCarga(document.getElementById('btnGuardar'), async () => {
+    try {
+      // 1) Cabecera + laboratorio + cantidades de repuestos existentes
+      await ordenesApi.actualizar(folio, {
+        descripcion_fallo: descripcion,
+        estado_orden: document.getElementById('editEstado').value,
+        codigo_tecnico: tecnicoSeleccionado.codigo,
+        nivel_encriptacion: encriptacion,
+        protocolo_seguridad: protocolo,
+        horas_laboratorio: horas,
+        repuestos: toUpdate.map(r => ({ codigo_repuesto: r.codigo, cantidad: r.qty })),
+      });
 
-    // 2) Repuestos nuevos -> POST
-    for (const r of toAdd) {
-      await detallesApi.agregar(folio, { codigo_repuesto: r.codigo, cantidad: r.qty });
-    }
-    // 3) Repuestos quitados -> DELETE
-    for (const r of toRemove) {
-      await detallesApi.eliminar(folio, r.codigo);
-    }
+      // 2) Repuestos nuevos -> POST
+      for (const r of toAdd) {
+        await detallesApi.agregar(folio, { codigo_repuesto: r.codigo, cantidad: r.qty });
+      }
+      // 3) Repuestos quitados -> DELETE
+      for (const r of toRemove) {
+        await detallesApi.eliminar(folio, r.codigo);
+      }
 
-    document.getElementById('modalNumOrdenEditar').textContent = folio;
-    document.getElementById('modalExitoEditar').classList.add('active');
-  } catch (err) {
-    showError(err);
-  }
+      document.getElementById('modalNumOrdenEditar').textContent = folio;
+      document.getElementById('modalExitoEditar').classList.add('active');
+    } catch (err) {
+      showError(err);
+    }
+  });
 }
 
 // ===== Cancelar / cierre de modales de éxito =====
@@ -528,10 +546,14 @@ document.getElementById('btnCerrarExitoEditar')?.addEventListener('click', () =>
 
 // ===== Bloquear teclas no numéricas en horas =====
 const BLOCKED_KEYS = ['-', '+', 'e', 'E', '.', ','];
-['horasLaboratorio', 'editHoras'].forEach(id => {
+['horasLaboratorio', 'editHoras', 'actualizarRepQty'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('keydown', e => { if (BLOCKED_KEYS.includes(e.key)) e.preventDefault(); });
+  // Al salir del campo, un valor de 0 (o vacío/negativo) se descarta.
+  el.addEventListener('blur', () => {
+    if (el.value !== '' && parseInt(el.value) <= 0) el.value = '';
+  });
 });
 
 // ===== Inicializar =====

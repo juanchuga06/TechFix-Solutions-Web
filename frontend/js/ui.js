@@ -116,6 +116,32 @@ function renderTablaMensaje(tbodyId, colspan, mensaje) {
     mensaje + '</td></tr>';
 }
 
+// ---------- Indicador de carga en botones de acción ----------
+// Envuelve una operación asíncrona (guardar, eliminar, actualizar...):
+// deshabilita el botón y muestra una ruedita mientras dura el proceso.
+// Así el usuario ve que sí se hizo clic y no puede duplicar registros.
+async function conCarga(btn, fn) {
+  if (btn && btn.dataset.cargando === '1') return; // ya está en proceso
+  if (btn) {
+    const label = btn.textContent;
+    btn.dataset.cargando = '1';
+    btn.dataset.htmlOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('btn-cargando');
+    btn.innerHTML = '<span class="spinner"></span>' + label;
+  }
+  try {
+    return await fn();
+  } finally {
+    if (btn) {
+      btn.dataset.cargando = '';
+      btn.disabled = false;
+      btn.classList.remove('btn-cargando');
+      if (btn.dataset.htmlOriginal !== undefined) btn.innerHTML = btn.dataset.htmlOriginal;
+    }
+  }
+}
+
 // ---------- Arranque automático en páginas protegidas ----------
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {

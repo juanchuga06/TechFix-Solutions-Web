@@ -129,25 +129,27 @@ document.getElementById('btnCerrarAgregar').addEventListener('click', function()
   document.getElementById('modalAgregarTecnico').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarAgregar').addEventListener('click', async function() {
+document.getElementById('btnConfirmarAgregar').addEventListener('click', function() {
   const cedula       = document.getElementById('agCedula').value.trim();
   const nombre       = document.getElementById('agNombre').value.trim();
   const apellido     = document.getElementById('agApellido').value.trim();
   const especialidad = document.getElementById('agEspecialidad').value.trim();
 
-  try {
-    await tecnicosApi.crear({
-      cedula_tecnico:       cedula,
-      nombre_tecnico:       nombre,
-      apellido_tecnico:     apellido,
-      especialidad_tecnico: especialidad,
-      codigo_sede:          nodo,
-    });
-    document.getElementById('modalAgregarTecnico').classList.remove('active');
-    await cargarTecnicos();
-  } catch (err) {
-    showError(err);
-  }
+  conCarga(document.getElementById('btnConfirmarAgregar'), async function() {
+    try {
+      await tecnicosApi.crear({
+        cedula_tecnico:       cedula,
+        nombre_tecnico:       nombre,
+        apellido_tecnico:     apellido,
+        especialidad_tecnico: especialidad,
+        codigo_sede:          nodo,
+      });
+      document.getElementById('modalAgregarTecnico').classList.remove('active');
+      await cargarTecnicos();
+    } catch (err) {
+      showError(err);
+    }
+  });
 });
 
 // ===== ELIMINAR =====
@@ -166,16 +168,18 @@ document.getElementById('btnCancelarElimTecnico').addEventListener('click', func
   document.getElementById('modalEliminarTecnico').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarElimTecnico').addEventListener('click', async function() {
+document.getElementById('btnConfirmarElimTecnico').addEventListener('click', function() {
   const codigo = selectedCodigo;
-  try {
-    await tecnicosApi.eliminar(codigo);
-    document.getElementById('modalEliminarTecnico').classList.remove('active');
-    await cargarTecnicos();
-  } catch (err) {
-    document.getElementById('modalEliminarTecnico').classList.remove('active');
-    showError(err);
-  }
+  conCarga(document.getElementById('btnConfirmarElimTecnico'), async function() {
+    try {
+      await tecnicosApi.eliminar(codigo);
+      document.getElementById('modalEliminarTecnico').classList.remove('active');
+      await cargarTecnicos();
+    } catch (err) {
+      document.getElementById('modalEliminarTecnico').classList.remove('active');
+      showError(err);
+    }
+  });
 });
 
 // ===== ACTUALIZAR =====
@@ -223,19 +227,21 @@ document.getElementById('btnConfirmarActualizar').addEventListener('click', asyn
   const apellido     = (inApell.style.display  !== 'none' ? inApell.value.trim()  : document.getElementById('spanApellido').textContent.trim()) || t.apellido;
   const especialidad = (inEsp.style.display    !== 'none' ? inEsp.value.trim()    : document.getElementById('spanEspecialidad').textContent.trim()) || t.especialidad;
 
-  try {
-    await tecnicosApi.actualizar(t.codigo, {
-      cedula_tecnico:       t.cedula,
-      nombre_tecnico:       nombre,
-      apellido_tecnico:     apellido,
-      especialidad_tecnico: especialidad,
-    });
-    document.getElementById('modalActualizarTecnico').classList.remove('active');
-    document.getElementById('modalActualizadoExitoTec').classList.add('active');
-    await cargarTecnicos();
-  } catch (err) {
-    showError(err);
-  }
+  conCarga(document.getElementById('btnConfirmarActualizar'), async function() {
+    try {
+      await tecnicosApi.actualizar(t.codigo, {
+        cedula_tecnico:       t.cedula,
+        nombre_tecnico:       nombre,
+        apellido_tecnico:     apellido,
+        especialidad_tecnico: especialidad,
+      });
+      document.getElementById('modalActualizarTecnico').classList.remove('active');
+      document.getElementById('modalActualizadoExitoTec').classList.add('active');
+      await cargarTecnicos();
+    } catch (err) {
+      showError(err);
+    }
+  });
 });
 
 document.getElementById('btnAceptarActualizadoTec').addEventListener('click', function() {

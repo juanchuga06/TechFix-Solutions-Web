@@ -125,30 +125,32 @@ document.getElementById('btnLimpiar').addEventListener('click', () => {
 });
 
 // ===== Registrar cliente =====
-document.getElementById('btnRegistrar').addEventListener('click', async () => {
+document.getElementById('btnRegistrar').addEventListener('click', () => {
   const cedula   = document.getElementById('fCedula').value.trim();
   const nombre   = document.getElementById('fNombre').value.trim();
   const telefono = document.getElementById('fTelefono').value.trim();
   const correo   = document.getElementById('fCorreo').value.trim();
 
-  try {
-    await clientesApi.crear({
-      cedula_cliente:   cedula,
-      nombre_completo:  nombre,
-      telefono_cliente: telefono,
-      correo_cliente:   correo,
-    });
+  conCarga(document.getElementById('btnRegistrar'), async () => {
+    try {
+      await clientesApi.crear({
+        cedula_cliente:   cedula,
+        nombre_completo:  nombre,
+        telefono_cliente: telefono,
+        correo_cliente:   correo,
+      });
 
-    ['fCedula','fNombre','fTelefono','fCorreo'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
+      ['fCedula','fNombre','fTelefono','fCorreo'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
 
-    document.getElementById('modalRegistroNombre').textContent = nombre;
-    document.getElementById('modalRegistro').classList.add('active');
-    await cargarClientes();
-  } catch (err) {
-    showError(err);
-  }
+      document.getElementById('modalRegistroNombre').textContent = nombre;
+      document.getElementById('modalRegistro').classList.add('active');
+      await cargarClientes();
+    } catch (err) {
+      showError(err);
+    }
+  });
 });
 
 // ===== Modal registro exitoso =====
@@ -206,26 +208,28 @@ document.getElementById('btnCancelarActualizar').addEventListener('click', () =>
   document.getElementById('modalActualizar').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarActualizar').addEventListener('click', async () => {
+document.getElementById('btnConfirmarActualizar').addEventListener('click', () => {
   if (!clienteParaActualizar) return;
 
   const nombre   = document.getElementById('updNombre').value.trim();
   const telefono = document.getElementById('updTelefono').value.trim();
   const correo   = document.getElementById('updCorreo').value.trim();
 
-  try {
-    await clientesApi.actualizar(clienteParaActualizar.cedula, {
-      cedula_cliente:   clienteParaActualizar.cedula,
-      nombre_completo:  nombre,
-      telefono_cliente: telefono,
-      correo_cliente:   correo,
-    });
-    document.getElementById('modalActualizar').classList.remove('active');
-    document.getElementById('modalActualizadoExito').classList.add('active');
-    await cargarClientes();
-  } catch (err) {
-    showError(err);
-  }
+  conCarga(document.getElementById('btnConfirmarActualizar'), async () => {
+    try {
+      await clientesApi.actualizar(clienteParaActualizar.cedula, {
+        cedula_cliente:   clienteParaActualizar.cedula,
+        nombre_completo:  nombre,
+        telefono_cliente: telefono,
+        correo_cliente:   correo,
+      });
+      document.getElementById('modalActualizar').classList.remove('active');
+      document.getElementById('modalActualizadoExito').classList.add('active');
+      await cargarClientes();
+    } catch (err) {
+      showError(err);
+    }
+  });
 });
 
 ['btnAceptarActualizadoExito','btnCerrarActualizadoExito'].forEach(id => {
@@ -246,18 +250,20 @@ document.getElementById('btnCancelarElimCliente').addEventListener('click', () =
   document.getElementById('modalEliminarCliente').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarElimCliente').addEventListener('click', async () => {
+document.getElementById('btnConfirmarElimCliente').addEventListener('click', () => {
   if (!clienteParaEliminar) return;
   const cedula = clienteParaEliminar.cedula;
-  try {
-    await clientesApi.eliminar(cedula);
-    clienteParaEliminar = null;
-    document.getElementById('modalEliminarCliente').classList.remove('active');
-    await cargarClientes();
-  } catch (err) {
-    document.getElementById('modalEliminarCliente').classList.remove('active');
-    showError(err);
-  }
+  conCarga(document.getElementById('btnConfirmarElimCliente'), async () => {
+    try {
+      await clientesApi.eliminar(cedula);
+      clienteParaEliminar = null;
+      document.getElementById('modalEliminarCliente').classList.remove('active');
+      await cargarClientes();
+    } catch (err) {
+      document.getElementById('modalEliminarCliente').classList.remove('active');
+      showError(err);
+    }
+  });
 });
 
 // Cerrar modales al clic fuera

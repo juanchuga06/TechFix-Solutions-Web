@@ -168,16 +168,18 @@ document.getElementById('btnCancelarEliminar')?.addEventListener('click', () => 
   document.getElementById('modalEliminar').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarEliminar')?.addEventListener('click', async () => {
+document.getElementById('btnConfirmarEliminar')?.addEventListener('click', () => {
   const folio = selectedFolio;
-  try {
-    await ordenesApi.eliminar(folio);
-    document.getElementById('modalEliminar').classList.remove('active');
-    await cargarOrdenes(document.getElementById('filtroFecha')?.value || null);
-  } catch (err) {
-    document.getElementById('modalEliminar').classList.remove('active');
-    showError(err);
-  }
+  conCarga(document.getElementById('btnConfirmarEliminar'), async () => {
+    try {
+      await ordenesApi.eliminar(folio);
+      document.getElementById('modalEliminar').classList.remove('active');
+      await cargarOrdenes(document.getElementById('filtroFecha')?.value || null);
+    } catch (err) {
+      document.getElementById('modalEliminar').classList.remove('active');
+      showError(err);
+    }
+  });
 });
 
 document.getElementById('modalEliminar')?.addEventListener('click', function (e) {

@@ -94,6 +94,10 @@ function validarPrecio(input) {
       input.value = '';
     }
   });
+  // Al salir del campo, un valor de 0 (o 0.0) se descarta.
+  input.addEventListener('blur', () => {
+    if (input.value !== '' && parseFloat(input.value) <= 0) input.value = '';
+  });
 }
 validarPrecio(document.getElementById('nuevoPrecioRep'));
 validarPrecio(document.getElementById('updPrecio'));
@@ -109,18 +113,25 @@ document.getElementById('btnCerrarNuevo').addEventListener('click', () => {
   document.getElementById('modalNuevo').classList.remove('active');
 });
 
-document.getElementById('btnAgregarRepuesto').addEventListener('click', async () => {
+document.getElementById('btnAgregarRepuesto').addEventListener('click', () => {
   const nombre = document.getElementById('nuevoNombreRep').value.trim();
   const precio = parseFloat(document.getElementById('nuevoPrecioRep').value);
 
-  try {
-    await repuestosApi.crear({ nombre_pieza: nombre, costo_unitario: isNaN(precio) ? null : precio });
-    document.getElementById('modalNuevo').classList.remove('active');
-    await cargarRepuestos();
-    showExito('Repuesto Ingresado con Éxito', 'El repuesto se ingresó exitosamente.');
-  } catch (err) {
-    showError(err);
+  if (isNaN(precio) || precio <= 0) {
+    showError(null, 'El costo unitario debe ser un valor mayor a 0.');
+    return;
   }
+
+  conCarga(document.getElementById('btnAgregarRepuesto'), async () => {
+    try {
+      await repuestosApi.crear({ nombre_pieza: nombre, costo_unitario: isNaN(precio) ? null : precio });
+      document.getElementById('modalNuevo').classList.remove('active');
+      await cargarRepuestos();
+      showExito('Repuesto Ingresado con Éxito', 'El repuesto se ingresó exitosamente.');
+    } catch (err) {
+      showError(err);
+    }
+  });
 });
 
 // ===== ELIMINAR REPUESTO =====
@@ -134,17 +145,19 @@ document.getElementById('btnCancelarElim').addEventListener('click', () => {
   document.getElementById('modalEliminar').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarElim').addEventListener('click', async () => {
+document.getElementById('btnConfirmarElim').addEventListener('click', () => {
   const codigo = selectedCodigo;
-  try {
-    await repuestosApi.eliminar(codigo);
-    document.getElementById('modalEliminar').classList.remove('active');
-    await cargarRepuestos();
-    showExito('Repuesto Eliminado con Éxito', 'El repuesto se eliminó exitosamente.');
-  } catch (err) {
-    document.getElementById('modalEliminar').classList.remove('active');
-    showError(err);
-  }
+  conCarga(document.getElementById('btnConfirmarElim'), async () => {
+    try {
+      await repuestosApi.eliminar(codigo);
+      document.getElementById('modalEliminar').classList.remove('active');
+      await cargarRepuestos();
+      showExito('Repuesto Eliminado con Éxito', 'El repuesto se eliminó exitosamente.');
+    } catch (err) {
+      document.getElementById('modalEliminar').classList.remove('active');
+      showError(err);
+    }
+  });
 });
 
 // ===== ACTUALIZAR REPUESTO =====
@@ -162,21 +175,28 @@ document.getElementById('btnCerrarActualizar').addEventListener('click', () => {
   document.getElementById('modalActualizar').classList.remove('active');
 });
 
-document.getElementById('btnConfirmarActualizar').addEventListener('click', async () => {
+document.getElementById('btnConfirmarActualizar').addEventListener('click', () => {
   const nuevoNombre = document.getElementById('updNombre').value.trim();
   const nuevoPrecio = parseFloat(document.getElementById('updPrecio').value);
 
-  try {
-    await repuestosApi.actualizar(selectedCodigo, {
-      nombre_pieza:   nuevoNombre,
-      costo_unitario: isNaN(nuevoPrecio) ? null : nuevoPrecio,
-    });
-    document.getElementById('modalActualizar').classList.remove('active');
-    await cargarRepuestos();
-    showExito('Repuesto Actualizado con Éxito', 'El repuesto se actualizó exitosamente.');
-  } catch (err) {
-    showError(err);
+  if (isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
+    showError(null, 'El costo unitario debe ser un valor mayor a 0.');
+    return;
   }
+
+  conCarga(document.getElementById('btnConfirmarActualizar'), async () => {
+    try {
+      await repuestosApi.actualizar(selectedCodigo, {
+        nombre_pieza:   nuevoNombre,
+        costo_unitario: isNaN(nuevoPrecio) ? null : nuevoPrecio,
+      });
+      document.getElementById('modalActualizar').classList.remove('active');
+      await cargarRepuestos();
+      showExito('Repuesto Actualizado con Éxito', 'El repuesto se actualizó exitosamente.');
+    } catch (err) {
+      showError(err);
+    }
+  });
 });
 
 // Cerrar modales al clic fuera
