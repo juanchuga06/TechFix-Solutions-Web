@@ -5,12 +5,18 @@
 // usan estas funciones para leer/escribir en la base de datos distribuida
 // a través de los procedimientos almacenados.
 //
-// Si el backend corre en otra máquina/puerto, cambie API_BASE aquí.
-// Funciona igual si las páginas se abren con file:// o desde un servidor
-// estático, porque el backend habilita CORS para cualquier origen.
+// El API se busca en el MISMO host desde el que se cargó la página, en el
+// puerto 8000. Así funciona tanto en local (localhost) como cuando un
+// compañero abre la app por la IP de la VPN (p. ej. http://26.239.167.8:5500):
+// su navegador llamará al API en esa misma IP, no en su propia máquina.
+// El backend habilita CORS para cualquier origen.
 // =====================================================================
 
-const API_BASE = 'http://localhost:8000';
+const API_PORT = 8000;
+const API_HOST = (typeof window !== 'undefined' && window.location && window.location.hostname)
+  ? window.location.hostname
+  : 'localhost';
+const API_BASE = `http://${API_HOST}:${API_PORT}`;
 
 // ---------------------------------------------------------------------
 // parseSqlError: extrae el número de error y el mensaje del SP desde el

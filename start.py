@@ -43,6 +43,19 @@ def esperar_puerto(port, timeout=30):
     return False
 
 
+def ips_locales():
+    """Lista las direcciones IPv4 de esta máquina (incluye la de la VPN)."""
+    ips = set()
+    try:
+        _, _, addrs = socket.gethostbyname_ex(socket.gethostname())
+        for a in addrs:
+            if not a.startswith("127."):
+                ips.add(a)
+    except Exception:
+        pass
+    return sorted(ips)
+
+
 def encontrar_navegador():
     """Devuelve la ruta de Chrome o Edge (modo aplicación)."""
     candidatos = [
@@ -81,21 +94,31 @@ def main():
     procs = []
 
     print("Encendiendo el API...")
+    # --host 0.0.0.0: acepta conexiones desde la red/VPN, no solo localhost.
     api = subprocess.Popen(
-        [py, "-m", "uvicorn", "main:app", "--port", str(API_PORT)],
+        [py, "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", str(API_PORT)],
         cwd=str(BACKEND),
     )
     procs.append(api)
 
     print("Encendiendo el frontend...")
+    # --bind 0.0.0.0: el servidor estático también queda accesible por la VPN.
     web = subprocess.Popen(
-        [py, "-m", "http.server", str(WEB_PORT), "--directory", str(FRONTEND)],
+        [py, "-m", "http.server", str(WEB_PORT), "--bind", "0.0.0.0", "--directory", str(FRONTEND)],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
     procs.append(web)
 
     esperar_puerto(API_PORT)
     esperar_puerto(WEB_PORT)
+
+    # Muestra las URLs que un compañero puede abrir desde su navegador.
+    print("\n" + "=" * 60)
+    print("App local:  " + INDEX_URL)
+    for ip in ips_locales():
+        print(f"Compartir:  http://{ip}:{WEB_PORT}/index.html")
+    print("(Comparta la URL con su IP de la VPN, p. ej. la 26.x.x.x)")
+    print("=" * 60 + "\n")
 
     navegador = encontrar_navegador()
     perfil = tempfile.mkdtemp(prefix="techfix_")
