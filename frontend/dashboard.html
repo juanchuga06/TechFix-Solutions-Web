@@ -20,6 +20,20 @@
 
     .section-block { margin-bottom: 40px; }
 
+    /* ===== PESTAÑAS DE SEDE ===== */
+    .sede-tabs {
+      display: flex; gap: 4px; margin-bottom: 24px;
+      border-bottom: 2px solid var(--border-subtle);
+    }
+    .sede-tab {
+      background: none; border: none; cursor: pointer;
+      padding: 10px 22px; font-size: 14px; font-weight: 600; color: #888;
+      border-bottom: 3px solid transparent; margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .sede-tab:hover { color: var(--primary-navy); }
+    .sede-tab.active { color: var(--primary-navy); border-bottom-color: var(--accent-cyan); }
+
     /* ===== TOOLBAR ===== */
     .table-toolbar {
       display: flex; align-items: center; justify-content: space-between;
@@ -120,6 +134,13 @@
 
   <!-- MAIN -->
   <main class="main-content">
+
+    <!-- PESTAÑAS DE SEDE -->
+    <div class="sede-tabs">
+      <button class="sede-tab active" data-sede="ALL">Todas las sedes</button>
+      <button class="sede-tab" data-sede="S01">Sede norte</button>
+      <button class="sede-tab" data-sede="S02">Sede sur</button>
+    </div>
 
     <!-- TODAS LAS ÓRDENES -->
     <div class="section-block">

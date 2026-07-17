@@ -44,27 +44,29 @@ class OrdenUpdate(BaseModel):
 
 @router.get("/dashboard")
 def obtener_dashboard(
-    sede: str = Query(..., description="Sede para filtrar el dashboard (S01 o S02)"),
+    sede: Optional[str] = Query(None, description="Sede a filtrar (S01 o S02). Si se omite, se traen ambas."),
     estado: Optional[str] = Query(None, description="Filtro opcional por estado"),
     fecha: Optional[date] = Query(None, description="Filtro opcional por fecha"),
     db = Depends(get_db)
 ):
     """
-    Ejecuta el SP distribuido para listar el dashboard unificado.
+    Ejecuta el SP distribuido para listar el dashboard.
+    Si 'sede' se omite, se consultan ambas sedes (S01 y S02) y se unifican
+    en una sola lista.
     """
     try:
         cursor = db.cursor()
         query = "EXEC sp_ObtenerDashboardOrdenes @sede_filtro=?, @estado_filtro=?, @fecha_busqueda=?"
-        cursor.execute(query, (sede, estado, fecha))
 
-         # Obtenemos las filas crudas
-        filas = cursor.fetchall()
+        # Una sede concreta, o ambas si no se especifica.
+        sedes = [sede] if sede else ["S01", "S02"]
 
-        # Extraemos los nombres de las columnas
-        columnas = [columna[0] for columna in cursor.description]
-
-        # Unimos las columnas con los valores de cada fila para crear diccionarios
-        ordenes = [dict(zip(columnas, fila)) for fila in filas]
+        ordenes = []
+        for s in sedes:
+            cursor.execute(query, (s, estado, fecha))
+            filas = cursor.fetchall()
+            columnas = [columna[0] for columna in cursor.description]
+            ordenes += [dict(zip(columnas, fila)) for fila in filas]
 
         return {"ordenes": ordenes}
     except pyodbc.Error as e:

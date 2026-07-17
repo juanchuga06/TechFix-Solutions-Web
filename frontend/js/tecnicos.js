@@ -5,12 +5,12 @@
 
 const nodo = getNodo();
 
-// Título con la sede activa
-document.getElementById('pageTitleTecnicos').textContent =
-  'Personal técnico de la Sede ' + nombreSede(nodo);
+// Ahora se muestran los técnicos de todas las sedes.
+document.getElementById('pageTitleTecnicos').textContent = 'Personal técnico';
 
 // ===== Estado =====
 let tecnicos = [];          // { codigo, cedula, nombre, apellido, especialidad, sede }
+let sedesLista = [];        // { codigo_sede, nombre_sede, ... }
 let selectedCodigo = null;  // entero (codigo_empleado)
 
 function normalizarTecnico(t) {
@@ -27,7 +27,7 @@ function normalizarTecnico(t) {
 // ===== Carga desde el API =====
 async function cargarTecnicos() {
   try {
-    const data = await tecnicosApi.list(nodo);
+    const data = await tecnicosApi.list(); // sin sede -> todos
     tecnicos = (data.tecnicos || []).map(normalizarTecnico);
     selectedCodigo = null;
     document.getElementById('btnEliminarTecnico').disabled   = true;
@@ -35,17 +35,38 @@ async function cargarTecnicos() {
     renderTecnicos();
   } catch (err) {
     tecnicos = [];
-    renderTablaMensaje('bodyTecnicos', 5, mensajeDesconexion('Técnicos'));
+    renderTablaMensaje('bodyTecnicos', 6, mensajeDesconexion('Técnicos'));
   }
 }
 
 async function cargarSedes() {
   try {
     const data = await sedesApi.list();
-    renderSedes(data.sedes || []);
+    sedesLista = data.sedes || [];
+    renderSedes(sedesLista);
+    poblarSelectorSede();
   } catch (err) {
     renderTablaMensaje('bodySedes', 3, mensajeDesconexion('Sedes'));
+    // Respaldo para el selector si no cargaron las sedes.
+    sedesLista = [
+      { codigo_sede: 'S01', nombre_sede: 'Norte' },
+      { codigo_sede: 'S02', nombre_sede: 'Sur' },
+    ];
+    poblarSelectorSede();
   }
+}
+
+// Llena el selector de sede del modal "Agregar técnico".
+function poblarSelectorSede() {
+  const sel = document.getElementById('agSede');
+  if (!sel) return;
+  sel.innerHTML = '';
+  sedesLista.forEach(function (s) {
+    const opt = document.createElement('option');
+    opt.value = s.codigo_sede;
+    opt.textContent = s.codigo_sede + ' — ' + s.nombre_sede;
+    sel.appendChild(opt);
+  });
 }
 
 // ===== Tablas =====
@@ -54,7 +75,7 @@ function renderTecnicos() {
   tbody.innerHTML = '';
 
   if (!tecnicos.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Técnicos</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Técnicos</td></tr>';
     return;
   }
 
@@ -66,7 +87,8 @@ function renderTecnicos() {
       '<td>' + t.cedula + '</td>' +
       '<td>' + t.nombre + '</td>' +
       '<td>' + t.apellido + '</td>' +
-      '<td>' + t.especialidad + '</td>';
+      '<td>' + t.especialidad + '</td>' +
+      '<td>' + t.sede + ' — ' + nombreSede(t.sede) + '</td>';
     tr.addEventListener('click', function() { selectTecnico(t.codigo); });
     tbody.appendChild(tr);
   });
@@ -122,6 +144,9 @@ document.getElementById('btnAgregarTecnico').addEventListener('click', function(
   ['agCedula','agNombre','agApellido','agEspecialidad'].forEach(function(id) {
     document.getElementById(id).value = '';
   });
+  // Sede por defecto = la del login (pero se puede cambiar).
+  const selSede = document.getElementById('agSede');
+  if (selSede) selSede.value = nodo;
   document.getElementById('modalAgregarTecnico').classList.add('active');
 });
 
@@ -134,6 +159,7 @@ document.getElementById('btnConfirmarAgregar').addEventListener('click', functio
   const nombre       = document.getElementById('agNombre').value.trim();
   const apellido     = document.getElementById('agApellido').value.trim();
   const especialidad = document.getElementById('agEspecialidad').value.trim();
+  const sede         = document.getElementById('agSede').value;
 
   conCarga(document.getElementById('btnConfirmarAgregar'), async function() {
     try {
@@ -142,7 +168,7 @@ document.getElementById('btnConfirmarAgregar').addEventListener('click', functio
         nombre_tecnico:       nombre,
         apellido_tecnico:     apellido,
         especialidad_tecnico: especialidad,
-        codigo_sede:          nodo,
+        codigo_sede:          sede,
       });
       document.getElementById('modalAgregarTecnico').classList.remove('active');
       await cargarTecnicos();
@@ -189,6 +215,7 @@ document.getElementById('btnActualizarTecnico').addEventListener('click', functi
 
   document.getElementById('updCodigoDisp').textContent = t.codigo;
   document.getElementById('updCedulaDisp').textContent = t.cedula;
+  document.getElementById('updSedeDisp').textContent   = t.sede + ' — ' + nombreSede(t.sede);
 
   document.getElementById('spanNombre').textContent    = t.nombre;
   document.getElementById('spanNombre').style.display  = 'inline';

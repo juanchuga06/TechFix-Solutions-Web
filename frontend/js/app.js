@@ -1,19 +1,21 @@
 // =====================================================================
 // app.js — Dashboard de órdenes (lectura distribuida) vía API
 // (sesión y menú lateral los maneja ui.js)
+//
+// Ahora se pueden ver las órdenes de ambas sedes mediante pestañas:
+//   ALL -> todas las sedes | S01 -> Norte | S02 -> Sur
+// Se carga todo una vez y se filtra en el cliente al cambiar de pestaña.
 // =====================================================================
 
 const nodo = getNodo();
-const sur  = esSur();
-
-// ===== Mostrar/ocultar columnas de la sede sur =====
-document.querySelectorAll('.col-sur').forEach(el => {
-  el.style.display = sur ? '' : 'none';
-});
 
 // ===== Estado =====
-let ordenes = [];          // catálogo cargado
+let ordenes = [];          // todas las órdenes cargadas (ambas sedes)
 let selectedFolio = null;  // entero
+let sedeActiva = 'ALL';    // 'ALL' | 'S01' | 'S02'
+
+// Las columnas de laboratorio se muestran salvo en la pestaña "Sede norte".
+function mostrarLab() { return sedeActiva !== 'S01'; }
 
 function normalizar(o) {
   return {
@@ -30,10 +32,16 @@ function normalizar(o) {
   };
 }
 
-// ===== Carga desde el API =====
+// Órdenes visibles según la pestaña activa.
+function ordenesVisibles() {
+  if (sedeActiva === 'ALL') return ordenes;
+  return ordenes.filter(o => o.sede === sedeActiva);
+}
+
+// ===== Carga desde el API (siempre todas las sedes) =====
 async function cargarOrdenes(fecha) {
   try {
-    const data = await ordenesApi.dashboard(nodo, null, fecha || null);
+    const data = await ordenesApi.dashboard(null, null, fecha || null);
     ordenes = (data.ordenes || []).map(normalizar);
     selectedFolio = null;
     document.getElementById('btnEliminar').disabled   = true;
@@ -41,8 +49,8 @@ async function cargarOrdenes(fecha) {
     renderTodo();
   } catch (err) {
     ordenes = [];
-    const colTodas  = sur ? 9 : 6;
-    const colEstado = sur ? 8 : 5;
+    const colTodas  = mostrarLab() ? 9 : 6;
+    const colEstado = mostrarLab() ? 8 : 5;
     renderTablaMensaje('bodyTodasOrdenes', colTodas,  mensajeDesconexion('Órdenes'));
     renderTablaMensaje('bodyPendientes',   colEstado, mensajeDesconexion('Órdenes'));
     renderTablaMensaje('bodyEnProceso',    colEstado, mensajeDesconexion('Órdenes'));
@@ -50,11 +58,21 @@ async function cargarOrdenes(fecha) {
   }
 }
 
+// Muestra/oculta las columnas de laboratorio según la pestaña.
+function actualizarColumnasLab() {
+  const mostrar = mostrarLab();
+  document.querySelectorAll('.col-sur').forEach(el => {
+    el.style.display = mostrar ? '' : 'none';
+  });
+}
+
 function renderTodo() {
-  renderTodasOrdenes(ordenes);
-  renderTablaEstado('bodyPendientes',  ordenes, 'Pendiente');
-  renderTablaEstado('bodyEnProceso',   ordenes, 'En Proceso');
-  renderTablaEstado('bodyFinalizadas', ordenes, 'Finalizada');
+  actualizarColumnasLab();
+  const data = ordenesVisibles();
+  renderTodasOrdenes(data);
+  renderTablaEstado('bodyPendientes',  data, 'Pendiente');
+  renderTablaEstado('bodyEnProceso',   data, 'En Proceso');
+  renderTablaEstado('bodyFinalizadas', data, 'Finalizada');
 }
 
 function badgeClass(estado) {
@@ -63,7 +81,7 @@ function badgeClass(estado) {
 }
 
 function colsSur(o) {
-  if (!sur) return '';
+  if (!mostrarLab()) return '';
   return `<td style="display:table-cell">${o.encriptacion ?? '—'}</td>
           <td style="display:table-cell">${o.protocolo ?? '—'}</td>
           <td style="display:table-cell">${o.horas ?? '—'}</td>`;
@@ -76,7 +94,7 @@ function renderTodasOrdenes(data) {
   tbody.innerHTML = '';
 
   if (!data.length) {
-    const cols = sur ? 9 : 6;
+    const cols = mostrarLab() ? 9 : 6;
     tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Órdenes</td></tr>`;
     return;
   }
@@ -106,7 +124,7 @@ function renderTablaEstado(bodyId, data, estado) {
   const filtradas = data.filter(o => o.estado === estado);
 
   if (!filtradas.length) {
-    const cols = sur ? 8 : 5;
+    const cols = mostrarLab() ? 8 : 5;
     tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#aaa;padding:16px;">No se encuentran registros de Órdenes</td></tr>`;
     return;
   }
@@ -128,11 +146,25 @@ function renderTablaEstado(bodyId, data, estado) {
 // ===== Selección de fila =====
 function selectOrden(folio) {
   selectedFolio = (selectedFolio === folio) ? null : folio;
-  renderTodasOrdenes(ordenes);
+  renderTodasOrdenes(ordenesVisibles());
   const has = selectedFolio !== null;
   document.getElementById('btnEliminar').disabled   = !has;
   document.getElementById('btnActualizar').disabled = !has;
 }
+
+// ===== Pestañas de sede =====
+document.querySelectorAll('.sede-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.sede-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    sedeActiva = tab.dataset.sede;
+    // Al cambiar de pestaña se deselecciona cualquier orden.
+    selectedFolio = null;
+    document.getElementById('btnEliminar').disabled   = true;
+    document.getElementById('btnActualizar').disabled = true;
+    renderTodo();
+  });
+});
 
 // ===== Filtro por fecha (consulta al API) =====
 document.getElementById('filtroFecha')?.addEventListener('change', function () {
@@ -152,10 +184,12 @@ document.getElementById('btnEliminar')?.addEventListener('click', () => {
   document.getElementById('modalTecnico').textContent     = orden.tecnico ?? '—';
   document.getElementById('modalCliente').textContent     = orden.cliente ?? '—';
 
+  // Los datos de laboratorio solo aplican a órdenes de la sede sur.
+  const esOrdenSur = orden.sede === 'S02';
   document.querySelectorAll('.col-sur-modal').forEach(el => {
-    el.style.display = sur ? '' : 'none';
+    el.style.display = esOrdenSur ? '' : 'none';
   });
-  if (sur) {
+  if (esOrdenSur) {
     document.getElementById('modalEncriptacion').textContent = orden.encriptacion ?? '—';
     document.getElementById('modalProtocolo').textContent    = orden.protocolo ?? '—';
     document.getElementById('modalHoras').textContent        = (orden.horas ?? '—') + (orden.horas != null ? ' h' : '');

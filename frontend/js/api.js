@@ -123,7 +123,7 @@ const repuestosApi = {
 };
 
 const tecnicosApi = {
-  list: (sede) => apiFetch('/tecnicos/?sede=' + encodeURIComponent(sede)),
+  list: (sede) => apiFetch('/tecnicos/' + (sede ? '?sede=' + encodeURIComponent(sede) : '')),
   crear: (tecnico) => apiFetch('/tecnicos/', { method: 'POST', body: tecnico }),
   actualizar: (codigo, tecnico) =>
     apiFetch('/tecnicos/' + encodeURIComponent(codigo), { method: 'PUT', body: tecnico }),
@@ -137,10 +137,12 @@ const sedesApi = {
 
 const ordenesApi = {
   dashboard: (sede, estado, fecha) => {
-    const params = new URLSearchParams({ sede });
+    const params = new URLSearchParams();
+    if (sede) params.append('sede', sede);
     if (estado) params.append('estado', estado);
     if (fecha) params.append('fecha', fecha);
-    return apiFetch('/ordenes/dashboard?' + params.toString());
+    const qs = params.toString();
+    return apiFetch('/ordenes/dashboard' + (qs ? '?' + qs : ''));
   },
   crear: (orden) => apiFetch('/ordenes/', { method: 'POST', body: orden }),
   actualizar: (folio, orden) =>

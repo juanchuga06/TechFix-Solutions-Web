@@ -5,18 +5,26 @@
 
 const params     = new URLSearchParams(window.location.search);
 const nodo       = getNodo();
-const sur        = esSur();
 const modoEditar = params.get('modo') === 'editar';
 
-if (sur) {
+// La sede de la orden se toma del selector, no del login.
+function sedeSeleccionada() {
+  const sel = document.getElementById('selectorSede');
+  return sel ? sel.value : nodo;
+}
+function esSurSel() { return sedeSeleccionada() === 'S02'; }
+
+// Muestra/oculta la sección de laboratorio según la sede elegida.
+function actualizarSeccionLab() {
   const secLab = document.getElementById('secLaboratorio');
-  if (secLab) secLab.style.display = 'block';
+  if (secLab) secLab.style.display = esSurSel() ? 'block' : 'none';
 }
 
 // ===== Catálogos (cargados desde el API) =====
 let clientes  = [];   // { cedula, nombre, telefono, correo }
 let tecnicos  = [];   // { codigo, cedula, nombre, apellido, especialidad, full }
 let catalogo  = [];   // { codigo, nombre, precio }
+let sedes     = [];   // { codigo_sede, nombre_sede, ... }
 
 // ===== Selección / estado interno =====
 let clienteSeleccionado = null;   // { cedula, nombre, telefono }
@@ -253,26 +261,66 @@ function configurarAutocompletes() {
 // =====================================================================
 // Carga inicial de catálogos + (si aplica) prellenado de edición
 // =====================================================================
+// Rellena el selector de sede con lo que devuelve el API (o un respaldo).
+function poblarSelectorSede() {
+  const sel = document.getElementById('selectorSede');
+  if (!sel) return;
+  if (!sedes.length) {
+    sedes = [
+      { codigo_sede: 'S01', nombre_sede: 'Norte' },
+      { codigo_sede: 'S02', nombre_sede: 'Sur' },
+    ];
+  }
+  sel.innerHTML = '';
+  sedes.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.codigo_sede;
+    opt.textContent = `${s.codigo_sede} — ${s.nombre_sede}`;
+    sel.appendChild(opt);
+  });
+}
+
+// Recarga el listado de técnicos según la sede elegida (fragmentación).
+async function recargarTecnicosSede() {
+  const sede = sedeSeleccionada();
+  try {
+    const dt = await tecnicosApi.list(sede);
+    tecnicos = (dt.tecnicos || []).map(normTecnico);
+  } catch (err) {
+    tecnicos = [];
+  }
+  tecnicoSeleccionado = null;
+  const inp = document.getElementById('buscarTecnico');
+  if (inp) inp.value = '';
+}
+
 async function init() {
   // Cada catálogo se carga de forma independiente: si uno falla (p. ej.
   // técnicos, cuya vista consulta el nodo remoto), los demás siguen
   // funcionando, para que el buscador de clientes no quede vacío.
-  const [rc, rt, rr] = await Promise.allSettled([
+  const [rc, rt, rr, rs] = await Promise.allSettled([
     clientesApi.list(),
     tecnicosApi.list(nodo),
     repuestosApi.list(),
+    sedesApi.list(),
   ]);
 
   if (rc.status === 'fulfilled') clientes = (rc.value.clientes || []).map(normCliente);
   if (rt.status === 'fulfilled') tecnicos = (rt.value.tecnicos || []).map(normTecnico);
   const repuestosOk = rr.status === 'fulfilled';
   if (repuestosOk) catalogo = (rr.value.repuestos || []).map(normRepuesto);
+  if (rs.status === 'fulfilled') sedes = (rs.value.sedes || []);
 
+  poblarSelectorSede();
   configurarAutocompletes();
 
   if (modoEditar) {
     await prellenarEdicion();
   } else {
+    // Sede por defecto = la del login (pero se puede cambiar).
+    document.getElementById('selectorSede').value = nodo;
+    actualizarSeccionLab();
+
     // La fecha de hoy queda preseleccionada para ahorrar un clic.
     const hoy = new Date();
     selectedDate = hoy;
@@ -285,6 +333,12 @@ async function init() {
     else renderTablaMensaje('bodyRepuestos', 4, mensajeDesconexion('Repuestos'));
   }
 }
+
+// Al cambiar la sede (modo nueva): ajusta laboratorio y recarga técnicos.
+document.getElementById('selectorSede').addEventListener('change', async () => {
+  actualizarSeccionLab();
+  await recargarTecnicosSede();
+});
 
 async function prellenarEdicion() {
   document.getElementById('pageTitle').textContent  = 'Modificar orden de servicio';
@@ -300,6 +354,22 @@ async function prellenarEdicion() {
   const folio = sessionStorage.getItem('ordenSeleccionada');
   let orden = {};
   try { orden = JSON.parse(sessionStorage.getItem('ordenEditar') || '{}'); } catch (_) {}
+
+  // Sede de la orden: fija (no editable) al modificar un registro existente.
+  const selSede = document.getElementById('selectorSede');
+  if (orden.sede) selSede.value = orden.sede;
+  selSede.disabled = true;
+  selSede.classList.add('input-bloqueado');
+  selSede.title = 'La sede de una orden no se puede modificar';
+  actualizarSeccionLab();
+
+  // Los técnicos deben ser los de la sede de la orden (no los del login).
+  if (orden.sede && orden.sede !== nodo) {
+    try {
+      const dt = await tecnicosApi.list(orden.sede);
+      tecnicos = (dt.tecnicos || []).map(normTecnico);
+    } catch (_) { /* si falla, se queda con los ya cargados */ }
+  }
 
   // Cliente (solo visualización; el SP de actualización NO cambia el cliente,
   // por eso el campo queda bloqueado en la pantalla de modificación).
@@ -329,8 +399,8 @@ async function prellenarEdicion() {
   document.getElementById('dispFecha').textContent    = orden.fecha || '';
   document.getElementById('dispNumOrden').textContent = folio || '';
 
-  // Laboratorio (sede sur)
-  if (sur) {
+  // Laboratorio (solo si la orden es de la sede sur)
+  if (esSurSel()) {
     document.getElementById('sec5Editar').style.display = 'block';
     document.getElementById('sec5Nueva').style.display  = 'none';
     if (orden.encriptacion) document.getElementById('editEncriptacion').value = orden.encriptacion;
@@ -452,7 +522,7 @@ async function guardarNueva() {
   if (!fecha) { showError(null, 'Seleccione la fecha de ingreso.'); return; }
 
   let encriptacion = null, protocolo = null, horas = null;
-  if (sur) {
+  if (esSurSel()) {
     encriptacion = document.getElementById('nivelEncriptacion').value || null;
     protocolo    = document.getElementById('protocoloSeguridad').value || null;
     if (!encriptacion) { showError(null, 'Seleccione el nivel de encriptación.'); return; }
@@ -468,7 +538,7 @@ async function guardarNueva() {
     estado_orden: document.getElementById('estadoOrden').value,
     codigo_tecnico: tecnicoSeleccionado.codigo,
     cedula_cliente: clienteSeleccionado.cedula,
-    codigo_sede: nodo,
+    codigo_sede: sedeSeleccionada(),
     nivel_encriptacion: encriptacion,
     protocolo_seguridad: protocolo,
     horas_laboratorio: horas,
@@ -493,7 +563,7 @@ async function guardarEdicion() {
   if (!tecnicoSeleccionado) { showError(null, 'Seleccione un técnico válido (por código).'); return; }
 
   let encriptacion = null, protocolo = null, horas = null;
-  if (sur) {
+  if (esSurSel()) {
     encriptacion = document.getElementById('editEncriptacion').value || null;
     protocolo    = document.getElementById('editProtocolo').value || null;
     if (!encriptacion) { showError(null, 'Seleccione el nivel de encriptación.'); return; }

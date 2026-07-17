@@ -28,20 +28,22 @@ class TecnicoUpdate(TecnicoBase):
 # --- ENDPOINTS ---
 
 @router.get("/")
-def listar_tecnicos(sede: str = Query(..., description="Sede activa de la sesión (S01 o S02)"), cedula_tecnico: Optional[str] = None, db = Depends(get_db)):
+def listar_tecnicos(sede: Optional[str] = Query(None, description="Sede a filtrar (S01 o S02). Si se omite, se listan todas."), cedula_tecnico: Optional[str] = None, db = Depends(get_db)):
     """
-    Lista los técnicos aplicando fragmentación horizontal según la sede activa.
-    Consume la vista VDA_Tecnico.
+    Lista los técnicos desde la vista VDA_Tecnico.
+    - Si se pasa 'cedula_tecnico', busca ese técnico.
+    - Si se pasa 'sede', filtra por esa sede (fragmentación horizontal).
+    - Si no se pasa nada, devuelve los técnicos de todas las sedes.
     """
     try:
         cursor = db.cursor()
 
         if cedula_tecnico:
-            query = "SELECT * FROM VDA_Tecnico WHERE cedula_tecnico = ?"
-            cursor.execute(query, (cedula_tecnico,))
+            cursor.execute("SELECT * FROM VDA_Tecnico WHERE cedula_tecnico = ?", (cedula_tecnico,))
+        elif sede:
+            cursor.execute("SELECT * FROM VDA_Tecnico WHERE codigo_sede = ?", (sede,))
         else:
-            query = "SELECT * FROM VDA_Tecnico WHERE codigo_sede = ?"
-            cursor.execute(query, (sede,))
+            cursor.execute("SELECT * FROM VDA_Tecnico")
         
         # Obtenemos las filas crudas
         filas = cursor.fetchall()

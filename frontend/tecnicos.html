@@ -82,6 +82,7 @@
           <th>Nombre</th>
           <th>Apellido</th>
           <th>Especialidad</th>
+          <th>Sede</th>
         </tr>
       </thead>
       <tbody id="bodyTecnicos"></tbody>
@@ -135,6 +136,10 @@
       <label>Especialidad</label>
       <input type="text" id="agEspecialidad" placeholder="Type here..." />
     </div>
+    <div class="modal-field">
+      <label>Sede</label>
+      <select id="agSede" style="width:100%; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:6px; font-size:14px; outline:none; background:#fff;"></select>
+    </div>
     <div style="display:flex; justify-content:flex-end; margin-top:8px;">
       <button class="btn btn-primary" id="btnConfirmarAgregar">Agregar</button>
     </div>
@@ -154,9 +159,13 @@
       <label style="min-width:130px; font-size:13px; font-weight:600; color:#222;">Código:</label>
       <span id="updCodigoDisp" style="font-size:14px; color:#666;"></span>
     </div>
-    <div style="display:flex; gap:12px; margin-bottom:18px; align-items:center;">
+    <div style="display:flex; gap:12px; margin-bottom:12px; align-items:center;">
       <label style="min-width:130px; font-size:13px; font-weight:600; color:#222;">Cédula:</label>
       <span id="updCedulaDisp" style="font-size:14px; color:#666;"></span>
+    </div>
+    <div style="display:flex; gap:12px; margin-bottom:18px; align-items:center;">
+      <label style="min-width:130px; font-size:13px; font-weight:600; color:#222;">Sede:</label>
+      <span id="updSedeDisp" style="font-size:14px; color:#666;"></span>
     </div>
 
     <!-- Nombre editable con lápiz -->
